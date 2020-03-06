@@ -19,7 +19,21 @@ APP.config.from_mapping({'spotify_client': SPOTIFY_CLIENT})
 
 REDIRECT_URI: str = 'http://localhost:5000/spotify/callback'
 
-OAUTH2_SCOPES = ('user-modify-playback-state', 'user-read-currently-playing', 'user-read-playback-state')
+OAUTH2_SCOPES = ('user-modify-playback-state',
+                 'user-read-currently-playing',
+                 'user-read-playback-state',
+                 'user-read-playback-state',
+                 'user-modify-playback-state',
+                 'user-read-currently-playing',
+                 'streaming app-remote-control',
+                 'playlist-read-collaborative',
+                 'playlist-modify-public',
+                 'user-library-read',
+                 'playlist-read-private',
+                 'user-top-read',
+                 'user-read-recently-played',
+                 'user-follow-read',
+                 'user-follow-modify')
 OAUTH2: spotify.OAuth2 = spotify.OAuth2(SPOTIFY_CLIENT.id, REDIRECT_URI, scopes=OAUTH2_SCOPES)
 
 SPOTIFY_USERS: Dict[str, spotify.User] = {}
@@ -52,7 +66,11 @@ def spotify_failed():
 @APP.route('/index')
 def index():
     try:
-        return repr(SPOTIFY_USERS[flask.session['spotify_user_id']])
+        currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+        # print(SPOTIFY_USERS)
+        track = currentUser.currently_playing()
+        print(track)
+        return flask.render_template("test.html", user=currentUser)
     except KeyError:
         return flask.redirect(OAUTH2.url)
 
@@ -64,6 +82,22 @@ def user():
     track = currentUser.currently_playing()['item'].images
     print(track)
     return flask.render_template("test.html", user=currentUser)
+
+
+@APP.route('/newSession')
+def start():
+    currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+    playlists = currentUser.get_all_playlists()
+    # print(playlists)
+    return flask.render_template("newSession.html", playlists=playlists)
+
+
+@APP.route('/newPlaylist')
+def newPlaylist():
+    currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+    playlist = currentUser.create_playlist('Spo2fi Queue', collaborative=True)
+    listeningSessions[currentUser.display_name] = ListeningSession(currentUser, [], playlist)
+    return flask.render_template("queue.html", user=currentUser, playlist=playlist)
 
 
 if __name__ == '__main__':

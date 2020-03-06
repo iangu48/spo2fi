@@ -4,10 +4,16 @@
     <meta charset="UTF-8">
     <h1>{{user.display_name}}</h1>
     <h3> Currently Playing:</h3>
-    {% set currentTrack = user.currently_playing().item %}
-    <img src="{{ currentTrack.album.images[0].url }}" height="90" width="90">
-    <p>{{currentTrack.name}} - {{ currentTrack.artists[0].name }}</p>
-    <p>Duration: {{user.currently_playing().progress_ms // 1000}} / {{currentTrack.duration // 1000}}</p>
+    {% if user.currently_playing().is_playing == True %}
+        {% set currentTrack = user.currently_playing().item %}
+        <img src="{{ currentTrack.album.images[0].url }}" height="90" width="90" alt="track img">
+        <p>{{currentTrack.name}} - {{ currentTrack.artists[0].name }}</p>
+        <p>Duration: {{user.currently_playing().progress_ms // 1000}} / {{currentTrack.duration // 1000}}</p>
+        <br>
+        <a href="/newSession">New session</a>
+    {% else %}
+        not playing
+    {% endif %}
 </head>
 <body>
 

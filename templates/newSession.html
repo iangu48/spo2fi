@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<h6>This app uses an empty playlist to manage the queue.</h6>
+<h3>Use existing empty playlist or create a new one</h3>
+    {% for playlist in playlists %}
+        {% if playlist.collaborative %}
+            <p> {{ playlist.name }}</p>
+        {% endif %}
+    {% endfor %}
+</head>
+<body>
+
+</body>
+</html>
