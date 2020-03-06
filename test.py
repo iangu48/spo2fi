@@ -75,15 +75,6 @@ def index():
         return flask.redirect(OAUTH2.url)
 
 
-@APP.route('/user')
-def user():
-    currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
-    # print(SPOTIFY_USERS)
-    track = currentUser.currently_playing()['item'].images
-    print(track)
-    return flask.render_template("test.html", user=currentUser)
-
-
 @APP.route('/newSession')
 def start():
     currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
