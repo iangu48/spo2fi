@@ -4,7 +4,13 @@
     <meta charset="UTF-8">
     <h1>{{user.display_name}}</h1>
     <h3> Currently Playing:</h3>
-    <p>{{user.currently_playing().item.name}}, {{user.currently_playing().item.url}}</p>
+    {% set currentTrack = user.currently_playing().item %}
+    <img src="{{ currentTrack.album.images[0].url }}" height="90" width="90">
+    <p>{{currentTrack.name}} -
+        {% for a in currentTrack.artists %}
+            {{ a.name }}
+        {% endfor %}
+    </p>
 </head>
 <body>
 
