@@ -1,5 +1,6 @@
+from models import ListeningSession
 import os
-import string, json
+import string
 import random
 from typing import Tuple, Dict
 
@@ -22,6 +23,7 @@ OAUTH2_SCOPES = ('user-modify-playback-state', 'user-read-currently-playing', 'u
 OAUTH2: spotify.OAuth2 = spotify.OAuth2(SPOTIFY_CLIENT.id, REDIRECT_URI, scopes=OAUTH2_SCOPES)
 
 SPOTIFY_USERS: Dict[str, spotify.User] = {}
+listeningSessions: Dict[str, ListeningSession]
 
 
 @APP.route('/spotify/callback')
