@@ -1,67 +1,93 @@
-import spotipy
+from models import ListeningSession
 import os
+import string
+import random
+from typing import Tuple, Dict
+
 import flask
-from flask import Flask, request, render_template, session, redirect, url_for
-from markupsafe import escape
+import spotify.sync as spotify
+
+#  Client Keys
+SPOTIFY_CLIENT_ID = os.environ['SPOTIFY_CLIENT_ID']
+SPOTIFY_CLIENT_SECRET = os.getenv('SPOTIFY_CLIENT_SECRET')
+
+SPOTIFY_CLIENT = spotify.Client(SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET)
+
+APP = flask.Flask(__name__)
+APP.secret_key = os.environ['SESSION_SECRET_KEY']
+APP.config.from_mapping({'spotify_client': SPOTIFY_CLIENT})
+
+REDIRECT_URI: str = 'http://localhost:5000/spotify/callback'
+
+OAUTH2_SCOPES = ('user-modify-playback-state',
+                 'user-read-currently-playing',
+                 'user-read-playback-state',
+                 'user-read-playback-state',
+                 'user-modify-playback-state',
+                 'user-read-currently-playing',
+                 'streaming app-remote-control',
+                 'playlist-read-collaborative',
+                 'playlist-modify-public',
+                 'user-library-read',
+                 'playlist-read-private',
+                 'user-top-read',
+                 'user-read-recently-played',
+                 'user-follow-read',
+                 'user-follow-modify')
+OAUTH2: spotify.OAuth2 = spotify.OAuth2(SPOTIFY_CLIENT.id, REDIRECT_URI, scopes=OAUTH2_SCOPES)
+
+SPOTIFY_USERS: Dict[str, spotify.User] = {}
+listeningSessions: Dict[str, ListeningSession]
 
 
-app = Flask(__name__, template_folder='./templates')
+@APP.route('/spotify/callback')
+def spotify_callback():
+    try:
+        code = flask.request.args['code']
+    except KeyError:
+        return flask.redirect('/spotify/failed')
+    else:
+        key = ''.join(random.choice(string.ascii_uppercase) for _ in range(16))
+        # noinspection PyTypeChecker
+        SPOTIFY_USERS[key] = spotify.User.from_code(SPOTIFY_CLIENT, code, redirect_uri=REDIRECT_URI)
+
+        flask.session['spotify_user_id'] = key
+
+    return flask.redirect('/')
 
 
-clientId = os.environ['SPOTIPY_CLIENT_ID']
-print(clientId)
-clientSecret = os.getenv('SPOTIPY_CLIENT_SECRET')
-print(clientSecret)
-redirectUri = os.environ['SPOTIPY_REDIRECT_URI']
-print(redirectUri)
-
-scope = 'user-read-playback-state ' \
-        'user-modify-playback-state ' \
-        'user-read-currently-playing ' \
-        'streaming app-remote-control ' \
-        'playlist-read-collaborative ' \
-        'playlist-modify-public ' \
-        'user-library-read ' \
-        'playlist-read-private ' \
-        'user-top-read ' \
-        'user-read-recently-played ' \
-        'user-follow-read ' \
-        'user-follow-modify ' \
-        ' '
-
-token = {}
-sp = {}
-
-os.environ['SPOTIPY_CLIENT_USERNAME'] = 'i9iwajo8z5oz85pmrrqsthwrj'
+@APP.route('/spotify/failed')
+def spotify_failed():
+    flask.session.pop('spotify_user_id', None)
+    return 'Failed to authenticate with Spotify.'
 
 
-@app.route('/')
-def main():
-    username = 'i9iwajo8z5oz85pmrrqsthwrj'
-    token[0] = spotipy.prompt_for_user_token(username, scope)
-    sp[0] = spotipy.Spotify(auth=token[0])
-    print(token)
-    print(sp)
-    return "asdf"
+@APP.route('/')
+@APP.route('/index')
+def index():
+    try:
+        currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+        print(SPOTIFY_USERS)
+        return flask.render_template("test.html", user=currentUser)
+    except KeyError:
+        return flask.redirect(OAUTH2.url)
 
 
-@app.route('/callback')
-def redir():
-    print()
-    return render_template('return.html')
+@APP.route('/newSession')
+def start():
+    currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+    playlists = currentUser.get_all_playlists()
+    # print(playlists)
+    return flask.render_template("newSession.html", playlists=playlists)
 
 
-@app.route('/continue', methods=['POST'])
-def cont():
-    read, write = os.pipe()
-    cu = request.form['callbackUrl']
-    os.write(write, bytes(cu, 'utf-8'))
-    os.close(write)
-
-    print(request.form['callbackUrl'])
-    return redirect(url_for('test'))
+@APP.route('/newPlaylist')
+def newPlaylist():
+    currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+    playlist = currentUser.create_playlist('Spo2fi Queue', collaborative=True)
+    listeningSessions[currentUser.display_name] = ListeningSession(currentUser, [], playlist)
+    return flask.render_template("queue.html", user=currentUser, playlist=playlist)
 
 
-@app.route('/test')
-def test():
-    return spotipy.Spotify(auth=token[0]).currently_playing()
+if __name__ == '__main__':
+    APP.run('localhost', port=5000, debug=False)
