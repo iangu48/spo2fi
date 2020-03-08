@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% block setup %}
+        <title>{% block title %} Spo2fi - Queue with friends {% endblock %}</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+              integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+              crossorigin="anonymous">
+        <meta charset="UTF-8">
+    {% endblock %}
+
+    {% block header %}
+        <div class="container">
+        <h1>{{ user.display_name }}</h1>
+        <h3> Currently Playing:</h3>
+
+        {% if user.currently_playing().is_playing == True %}
+            {% set currentTrack = user.currently_playing().item %}
+            <img src="{{ currentTrack.album.images[0].url }}" height="90" width="90" alt="track img">
+            <p>{{ currentTrack.name }} - {{ currentTrack.artists[0].name }}</p>
+
+            {% set songProgress =  user.currently_playing().progress_ms / currentTrack.duration * 100 %}
+            <p>Duration: <span id="songSecondsPassed"> {{ user.currently_playing().progress_ms // 1000 }}</span> / <span id="songTotalSeconds"> {{ currentTrack.duration // 1000 }}</span></p>
+            <div class="progress">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{ songProgress }}%"
+                     aria-valuenow="{{ songProgress }}" id="songProgress"
+                     aria-valuemin="0"
+                     aria-valuemax="100">
+                </div>
+            </div>
+            <br>
+        {% else %}
+            nothing
+        {% endif %}
+    </div>
+    {% endblock %}
+</head>
+
+<body>
+<div class="container"> {% block content %} {% endblock %} </div>
+{% block footer %}
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script>
+        $(document).ready(function() {
+            console.log("ready");
+                window.setInterval(moveProgressBar, 1000);
+            }
+        );
+
+        function moveProgressBar() {
+            let bar = $('#songProgress');
+            let secondsPassed = $('#songSecondsPassed');
+            let totalSeconds = $('#songTotalSeconds').text();
+            let num = parseInt(secondsPassed.text()) + 1;
+            secondsPassed.text(num);
+
+            if (num >= totalSeconds) {
+                location.reload(true);
+                return
+            }
+            bar.css('width', num/totalSeconds*100 + '%').attr('aria-valuenow', num/totalSeconds*100)
+        }
+
+    </script>
+{% endblock %}
+</body>
+</html>

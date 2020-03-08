@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<form action="/search" method="get">
+    <div class="input-group input-group-lg">
+        <input type="text" class="form-control" id="query" name="query" placeholder="search"
+        aria-label="Search" aria-describedby="search">
+        <div class="input-group-append">
+            <button type="submit" class="btn btn-success">Go</button>
+        </div>
+    </div>
+</form>
+{% endblock %}

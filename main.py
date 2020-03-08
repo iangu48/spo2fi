@@ -40,6 +40,7 @@ OAUTH2: spotify.OAuth2 = spotify.OAuth2(SPOTIFY_CLIENT.id, REDIRECT_URI, scopes=
 
 SPOTIFY_USERS: Dict[str, spotify.User] = {}
 listeningSessions: Dict[str, ListeningSession] = {}
+parties: Dict[str, str] = {}
 
 
 @APP.route('/spotify/callback')
@@ -79,20 +80,53 @@ def index():
 
 @APP.route('/newSession')
 def start():
+    currentUser: spotify.User = SPOTIFY_USERS[flask.session['spotify_user_id']]
+    playlists = currentUser.get_playlists()
+    playlist: spotify.Playlist = None
+    for p in playlists:
+        print(p.name, p.name ==  'Spo2fi Queue')
+        if p.name == 'Spo2fi Queue':
+            playlist = p
+            break
+
+    if not playlist:
+        playlist = currentUser.create_playlist('Spo2fi Queue', collaborative=True, public=False)
+
+    joinId = ''.join(random.choice(string.ascii_uppercase + string.digits) for i in range(6))
+    listeningSessions[currentUser.id] = ListeningSession(currentUser, [], playlist, joinId)
+    parties[joinId] = currentUser.id
+
+    print(joinId)
+    if currentUser.currently_playing()['is_playing']:
+        playlist.replace_tracks(currentUser.currently_playing()['item'])
+    else:
+        newReleases = currentUser.top_tracks(limit=1, time_range='medium_term')
+        print(newReleases)
+        playlist.replace_tracks(newReleases[0])
+
+    currentUser.get_player().play(playlist)
+    flask.session['party'] = repr(listeningSessions[currentUser.id])
+    return flask.render_template("partyOwner.html",
+                                 playlist=playlist,
+                                 user=currentUser, #todo fix async issue
+                                 openSession=listeningSessions.get(currentUser.id),
+                                 joinId=joinId)
+
+
+@APP.route('/join')
+def join():
     currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
-    playlists = currentUser.get_all_playlists()
-
-    playlist = currentUser.create_playlist('Spo2fi Queue', collaborative=True, public=False)
-    # print(playlists)
-    return flask.render_template("newSession.html", playlists=playlists)
-
-
-@APP.route('/newPlaylist')
-def newPlaylist():
-    currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
-    playlist = currentUser.create_playlist('Spo2fi Queue', collaborative=True, public=False)
-    listeningSessions[currentUser.id] = ListeningSession(currentUser, [], playlist)
-    return flask.render_template("queue.html", user=currentUser, playlist=playlist)
+    try:
+        joinId = flask.request.args['joinId']
+        ownerId = parties[joinId]
+        party = listeningSessions[ownerId]
+    except KeyError:
+        return "id not found"
+    else:
+        if currentUser not in party.members:
+            party.members.append(currentUser)
+        flask.session['party'] = party
+        return flask.render_template("partyMember.html")
 
 
 @APP.route('/search')
