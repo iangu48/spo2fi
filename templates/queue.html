@@ -14,11 +14,28 @@
     <div class="row">
         <div class="col-12">
             <h5>Tracks: </h5>
+        <ul class="list-group">
             {% for track in tracks | reverse %}
-                <img src="{{ track.album.images[0].url}}" alt="img" width="90" height="90">
-                {{ track.name }} - {{ track.artists[0].name }}
-                <br>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <img src="{{ track.album.images[0].url}}" alt="img" width="90" height="90">
+                    <div class="col-6">
+                        <span class="text-center">{{ track.name }} </span>
+                        <div class="w-100"></div>
+                        <span class="text-muted font-weight-light text-center">{{ track.artists[0].name }}</span>
+                    </div>
+
+                    {% if isOwner %}
+                        <div class="align-self-center">
+                        <form action="/remove" method="get">
+                            <input name="trackId" id="trackId" value="{{ track.id }}" type="hidden">
+                            <button type="submit" class="btn btn-danger"><span class="fa fa-minus"></span> </button>
+                        </form>
+                        </div>
+                    {% endif %}
+                </li>
             {% endfor %}
+        </ul>
+
         </div>
     </div>
 

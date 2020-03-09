@@ -1,7 +1,16 @@
 {% extends "base.html" %}
 {% block title %} Spo2fi - Queue with friends {% endblock %}
 {% block content %}
-
+    <form action="/search" method="get">
+        <div class="input-group">
+            <input type="text" class="form-control" id="query" name="query" placeholder="search"
+            aria-label="Search" aria-describedby="search">
+            <div class="input-group-append">
+                <button type="submit" class="btn btn-success"><span class="fa fa-search"></span></button>
+            </div>
+        </div>
+    </form>
+    <br>
     <h5>Tracks: </h5>
     <ul class="list-group">
         {% for track in tracks %}

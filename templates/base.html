@@ -7,6 +7,7 @@
               integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
               crossorigin="anonymous">
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
     {% endblock %}
 
     {% block header %}
@@ -18,9 +19,18 @@
 
         {% if owner.currently_playing().is_playing == True %}
             {% set currentTrack = owner.currently_playing().item %}
-            <img src="{{ currentTrack.album.images[0].url}}" alt="img" width="90" height="90">
-            {{ currentTrack.name }} - {{ currentTrack.artists[0].name }}
-            <br>
+            <div class="row">
+                <div class="col-auto">
+                    <img src="{{ currentTrack.album.images[0].url}}" alt="img" width="90" height="90">
+
+                </div>
+                <div class="col-6">
+                    <span class="text-center">{{ currentTrack.name }} </span>
+                    <div class="w-100"></div>
+                    <span class="text-muted font-weight-light text-center">{{ currentTrack.artists[0].name }}</span>
+                </div>
+                <br>
+            </div>
 
             {% set songProgress =  owner.currently_playing().progress_ms / currentTrack.duration * 100 %}
             <p>Duration: <span id="songSecondsPassed"> {{ owner.currently_playing().progress_ms // 1000 }}</span> / <span id="songTotalSeconds"> {{ currentTrack.duration // 1000 }}</span></p>
