@@ -33,7 +33,11 @@
             </div>
 
             {% set songProgress =  owner.currently_playing().progress_ms / currentTrack.duration * 100 %}
-            <p>Duration: <span id="songSecondsPassed"> {{ owner.currently_playing().progress_ms // 1000 }}</span> / <span id="songTotalSeconds"> {{ currentTrack.duration // 1000 }}</span></p>
+            <p>Duration:
+                <span id="songSecondsPassed"> {{ owner.currently_playing().progress_ms // 1000 }}</span>
+                /
+                <span id="songTotalSeconds"> {{ currentTrack.duration // 1000 }}</span>
+            </p>
             <div class="progress">
                 <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{ songProgress }}%"
                      aria-valuenow="{{ songProgress }}" id="songProgress"

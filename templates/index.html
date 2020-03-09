@@ -2,22 +2,28 @@
 {% block title %} Spo2fi - Queue with friends {% endblock %}
 {% block content %}
 
-    <div class="col-lg-12">
-        <a class="btn btn-primary" href="/newSession">New session</a>
+    <div class="row">
+        <div class="col-auto">
+            <a class="btn btn-primary" href="/newSession">New session</a>
+        </div>
     </div>
     <br>
-    <div class="col-lg-12">
-        <form action="/join" method="get">
-            <div class="input-group">
-                <div class="input-group-prepend">
-                    <span class="input-group-text">Code: </span>
+    <div class="row">
+        <div class="col-auto">
+            <form action="/join" method="get">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">Join a party: </span>
+                    </div>
+                    <input type="text" name="joinId" id="joinId" aria-label="joinId" class="form-control"
+                           placeholder="Enter party code" autocomplete="off">
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-success"><span class="fa fa-user-plus"></span></button>
+                    </div>
                 </div>
-                <input type="text" name="joinId" id="joinId" aria-label="joinId" class="form-control">
-                <div class="input-group-append">
-                    <button type="submit" class="btn btn-success"><span class="fa fa-user-plus"></span></button>
-                </div>
-            </div>
-        </form>
+            </form>
+        </div>
+
     </div>
 
 
