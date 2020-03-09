@@ -1,19 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-<div class="container">
-<h1>Tracks: </h1>
-{% for track in tracks %}
-    <img src="{{ track.album.images[0].url}}" alt="img" width="90" height="90">
-    {{ track.name }}
+{% extends "base.html" %}
+{% block title %} Spo2fi - Queue with friends {% endblock %}
+{% block content %}
+    <form action="/search" method="get">
+        <div class="input-group">
+            <input type="text" class="form-control" id="query" name="query" placeholder="search"
+            aria-label="Search" aria-describedby="search">
+            <div class="input-group-append">
+                <button type="submit" class="btn btn-success"><span class="fa fa-search"></span></button>
+            </div>
+        </div>
+    </form>
     <br>
-{% endfor %}
-</div>
+    <div class="row">
+        <div class="col-12">
+            <h5>Tracks: </h5>
+            {% for track in tracks | reverse %}
+                <img src="{{ track.album.images[0].url}}" alt="img" width="90" height="90">
+                {{ track.name }} - {{ track.artists[0].name }}
+                <br>
+            {% endfor %}
+        </div>
+    </div>
 
-</head>
-<body>
-
-</body>
-</html>
+{% endblock %}

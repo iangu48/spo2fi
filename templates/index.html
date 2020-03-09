@@ -1,8 +1,18 @@
 {% extends "base.html" %}
 {% block title %} Spo2fi - Queue with friends {% endblock %}
 {% block content %}
-    <div class="container">
-        <a class="btn btn-primary" href="/newSession">New session</a>
 
-    </div>
+    <a class="btn btn-primary" href="/newSession">New session</a>
+    <form action="/join" method="get">
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <span class="input-group-text">Code: </span>
+            </div>
+            <input type="text" name="joinId" id="joinId" aria-label="joinId">
+            <div class="input-group-append">
+                <button type="submit" class="btn btn-success"><span class="fa fa-user-plus"></span></button>
+            </div>
+        </div>
+    </form>
+
 {% endblock %}
