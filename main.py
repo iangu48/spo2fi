@@ -107,9 +107,9 @@ def start():
         if currentUser.currently_playing()['is_playing']:
             playlist.replace_tracks(currentUser.currently_playing()['item'])
     except KeyError:  # currently_playing() is a beta endpoint, subject to possible future changes
-        newReleases = currentUser.top_tracks(limit=1, time_range='medium_term')
-        print(newReleases)
-        playlist.replace_tracks(newReleases[0])
+        usersTopTracks = currentUser.top_tracks(limit=1, time_range='medium_term')
+        print(usersTopTracks)
+        playlist.replace_tracks(usersTopTracks[0])
 
     print(currentUser.currently_playing())
     flask.session['party'] = listeningSessions[currentUser.id].joinId
