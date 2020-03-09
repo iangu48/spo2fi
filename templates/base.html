@@ -24,12 +24,11 @@
                     <img src="{{ currentTrack.album.images[0].url}}" alt="img" width="90" height="90">
 
                 </div>
-                <div class="col-6">
+                <div class="col-6 align-self-center">
                     <span class="text-center">{{ currentTrack.name }} </span>
                     <div class="w-100"></div>
                     <span class="text-muted font-weight-light text-center">{{ currentTrack.artists[0].name }}</span>
                 </div>
-                <br>
             </div>
 
             {% set songProgress =  owner.currently_playing().progress_ms / currentTrack.duration * 100 %}
