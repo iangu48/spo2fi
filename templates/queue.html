@@ -14,28 +14,39 @@
     <div class="row">
         <div class="col-12">
             <h5>Tracks: </h5>
-        <ul class="list-group">
-            {% for track in tracks | reverse %}
-                <li class="list-group-item d-flex align-items-center justify-content-between">
-                    <img src="{{ track.album.images[0].url}}" alt="img" width="90" height="90">
-                    <div class="col-6 text-left flex-grow-1">
-                        <span class="text-center">{{ track.name }} </span>
-                        <div class="w-100"></div>
-                        <span class="text-muted font-weight-light text-center">{{ track.artists[0].name }}</span>
-                    </div>
-
-                    {% if isOwner %}
-                        <div class="col-auto align-self-center justify-content-end text-right">
-                            <form action="/remove" method="get">
-                                <input name="trackId" id="trackId" value="{{ track.id }}" type="hidden">
-                                <button type="submit" class="btn btn-danger"><span class="fa fa-minus"></span> </button>
-                            </form>
+            <ul class="list-group">
+                {% for track in tracks | reverse %}
+                    <li class="list-group-item d-flex align-items-center justify-content-between">
+                        <div class="justify-content-start">
+                            <div class="row">
+                                <div class="col-auto d-inline-block">
+                                    <img src="{{ track.album.images[0].url}}" alt="img" width="90" height="90">
+                                </div>
+                                <div class="col-auto align-self-center flex-grow-1 d-inline-block">
+                                    <span class="text-center">{{ track.name }} </span>
+                                    <div class="w-100"></div>
+                                    <span class="text-muted font-weight-light">{{ track.artists[0].name }}</span>
+                                </div>
+                            </div>
                         </div>
-                    {% endif %}
-                </li>
-            {% endfor %}
-        </ul>
-
+                        {% if isOwner %}
+                            <div class="col-auto align-self-center">
+                                <form action="/remove" method="get" class="d-inline-block">
+                                    <input name="trackId" id="trackId" value="{{ track.id }}" type="hidden">
+                                    <button type="submit" class="btn btn-danger"><span class="fa fa-trash"></span> </button>
+                                </form>
+                                <span class="d-inline-block"></span>
+                                <form action="/playTrack" method="get" class="d-inline-block">
+                                    <input type="hidden" name="track" id="track" value="{{ track }}">
+                                    <button type="submit" class="btn btn-success"><span class="fa fa-play"></span></button>
+                                </form>
+                            </div>
+                        {% else %}
+                            <span> </span>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
         </div>
     </div>
 

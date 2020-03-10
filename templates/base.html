@@ -21,9 +21,17 @@
             {% endif %}
             {% endwith %}
             <br>
-            <h3>{{ owner.display_name }}
-                {% if joinId is defined %}<span class="badge badge-info">Code: {{ joinId }}</span>{% endif %}
-            </h3>
+            <div class="row">
+                <div class="col-12 d-flex justify-content-between mb-3">
+                    <div class="d-inline-block">
+                        <h3 class="mb-0">{{ owner.display_name }}</h3>
+                        {% if isOwner %} <span class="badge badge-warning mt-0">Party Owner</span> {% endif %}
+                    </div>
+                        <h3 class="d-inline-block">
+                            {% if joinId is defined %}<span class="badge badge-info">Code: {{ joinId }}</span>{% endif %}
+                        </h3>
+                </div>
+            </div>
 
             {% if owner.currently_playing().is_playing == True %}
                 {% set currentTrack = owner.currently_playing().item %}

@@ -76,7 +76,11 @@ def index():
         currentSession = listeningSessions.get(currentUser.id)
         print(SPOTIFY_USERS)
         print(listeningSessions)
-        return flask.render_template("index.html", user=currentUser, openSession=currentSession, owner=currentUser)
+        return flask.render_template("index.html",
+                                     user=currentUser,
+                                     openSession=currentSession,
+                                     owner=currentUser,
+                                     isOwner=False)
     except KeyError:
         return flask.redirect(OAUTH2.url)
 
@@ -105,12 +109,6 @@ def start():
         playlist = currentUser.create_playlist('Spo2fi Queue', collaborative=True, public=False)
         # currentUser.client.http.upload_playlist_cover_image(playlist.id, ) todo upload Spo2fi logo
 
-    joinId = ''.join(random.choice(string.ascii_uppercase + string.digits) for i in range(4))
-    while joinId in parties:
-        joinId = ''.join(random.choice(string.ascii_uppercase + string.digits) for i in range(4))
-    listeningSessions[currentUser.id] = ListeningSession(currentUser, [], playlist, joinId)
-    parties[joinId] = currentUser.id
-
     try:
         if currentUser.currently_playing()['is_playing']:
             playlist.replace_tracks(currentUser.currently_playing()['item'])
@@ -118,6 +116,12 @@ def start():
         usersTopTracks = currentUser.top_tracks(limit=1, time_range='medium_term')
         print(usersTopTracks)
         playlist.replace_tracks(usersTopTracks[0])
+
+    joinId = ''.join(random.choice(string.ascii_uppercase + string.digits) for i in range(4))
+    while joinId in parties:
+        joinId = ''.join(random.choice(string.ascii_uppercase + string.digits) for i in range(4))
+    listeningSessions[currentUser.id] = ListeningSession(currentUser, [], playlist, joinId)
+    parties[joinId] = currentUser.id
 
     print(currentUser.currently_playing())
     flask.session['party'] = listeningSessions[currentUser.id].joinId
@@ -237,7 +241,8 @@ def playTrack():
         return "no session currently found"
     else:
         currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
-        party.owner.get_player().play()  # todo WIP
+        track = flask.request.args['track']
+        party.owner.get_player().play(party.playlist.uri, offset=track)
         return flask.redirect(flask.url_for('.queue'))
 
 
