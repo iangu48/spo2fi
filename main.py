@@ -18,7 +18,6 @@ APP.secret_key = os.environ['SESSION_SECRET_KEY']
 APP.config.from_mapping({'spotify_client': SPOTIFY_CLIENT})
 
 REDIRECT_URI = os.environ['REDIRECT_URI']
-
 OAUTH2_SCOPES = ('user-modify-playback-state',
                  'user-read-currently-playing',
                  'user-read-playback-state',
