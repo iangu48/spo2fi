@@ -11,6 +11,6 @@
 - [ ] fill playlist when end is reached (this will be hard to do)
 - [ ] allow users to browse / add songs from their other playlists
 - [x] flash message errors
-- [ ] find better solution than keeping everything in memory (possibly implement a mongodb integration)
+- [ ] find better solution than keeping everything in memory (redis integration)
 - [ ] find elegant solution to deleting old sessions
 - [ ] migrate to a pure backend/frontend solution (very distant future)
