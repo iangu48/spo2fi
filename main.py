@@ -17,7 +17,7 @@ APP = flask.Flask(__name__)
 APP.secret_key = os.environ['SESSION_SECRET_KEY']
 APP.config.from_mapping({'spotify_client': SPOTIFY_CLIENT})
 
-REDIRECT_URI: str = 'http://iitsdevcoop.utsc.utoronto.ca:8080/spotify/callback'
+REDIRECT_URI = os.environ['REDIRECT_URI']
 
 OAUTH2_SCOPES = ('user-modify-playback-state',
                  'user-read-currently-playing',
@@ -86,6 +86,12 @@ def start():
     currentUser: spotify.User = SPOTIFY_USERS[flask.session['spotify_user_id']]
     if currentUser.id in listeningSessions:
         return flask.redirect(flask.url_for('.queue'))
+    try:
+        currentUser.currently_playing()['item']
+    except KeyError:
+        flask.flash("Playback device not found.. Please open your Spotify app and begin playing (any random song)",
+                    category='error')
+        return flask.redirect(flask.url_for('.index'))  # todo handle error
     playlists = currentUser.get_playlists()
     playlist: spotify.Playlist = None
     for p in playlists:
@@ -133,8 +139,8 @@ def join():
         ownerId = parties[joinId]
         party = listeningSessions[ownerId]
     except KeyError:
-        flask.flash('Code not found')
-        return flask.render_template("index.html", user=currentUser, owner=currentUser)
+        flask.flash('Code not found', category='error')
+        return flask.redirect('/')
     else:
         if currentUser not in party.members:
             party.members.append(currentUser)
@@ -150,7 +156,7 @@ def search():
         return "no query entered"
     else:
         currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
-        results = SPOTIFY_CLIENT.search(query, limit=5)
+        results = SPOTIFY_CLIENT.search(query, limit=10)
         ownerId = parties[flask.session['party']]
         party = listeningSessions[ownerId]
         return flask.render_template("search.html",
