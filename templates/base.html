@@ -81,7 +81,7 @@
             let num = parseInt(secondsPassed.text()) + 1;
             secondsPassed.text(num);
 
-            if (num >= totalSeconds) {
+            if (num > totalSeconds) {
                 location.reload(true);
                 return
             }

@@ -85,6 +85,7 @@ def index():
 def start():
     currentUser: spotify.User = SPOTIFY_USERS[flask.session['spotify_user_id']]
     if currentUser.id in listeningSessions:
+        # todo check if idiot user deletes playlist
         return flask.redirect(flask.url_for('.queue'))
     try:
         currentUser.currently_playing()['item']
@@ -102,6 +103,7 @@ def start():
 
     if not playlist:
         playlist = currentUser.create_playlist('Spo2fi Queue', collaborative=True, public=False)
+        # currentUser.client.http.upload_playlist_cover_image(playlist.id, ) todo upload Spo2fi logo
 
     joinId = ''.join(random.choice(string.ascii_uppercase + string.digits) for i in range(4))
     while joinId in parties:
@@ -183,9 +185,8 @@ def addToQueue():
         currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
         track = SPOTIFY_CLIENT.get_track(flask.request.args['trackId'])
 
-        party.owner.add_tracks(party.playlist, track)  # only owner can add tracks to playlist
-        playlist = party.playlist
-        print(playlist.name)
+        # party.owner.add_tracks(party.playlist, track)  # only owner can add tracks to playlist
+        party.playlist.extend([track])
 
         return flask.redirect(flask.url_for('.queue'))
 
@@ -203,9 +204,8 @@ def removeTrack():
         currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
         track = SPOTIFY_CLIENT.get_track(flask.request.args['trackId'])
 
-        party.owner.remove_tracks(party.playlist, track)  # only owner can add tracks to playlist
-        playlist = party.playlist
-        print(playlist.name)
+        party.playlist.remove(track)  # only owner can add tracks to playlist # todo fix this shit
+        # todo removing a track removes all instances of the track in the playlist
 
         return flask.redirect(flask.url_for('.queue'))
 
@@ -224,6 +224,21 @@ def queue():
                                  joinId=party.joinId,
                                  isOwner=currentUser == party.owner,
                                  playlists=playlists)
+
+
+@APP.route('/playTrack')
+def playTrack():
+    try:
+        print(flask.session['party'])
+        ownerId = parties[flask.session['party']]
+        party = listeningSessions[ownerId]
+        print(party)
+    except KeyError:
+        return "no session currently found"
+    else:
+        currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+        party.owner.get_player().play()  # todo WIP
+        return flask.redirect(flask.url_for('.queue'))
 
 
 if __name__ == '__main__':
