@@ -206,7 +206,6 @@ def removeTrack():
     else:
         currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
         track = SPOTIFY_CLIENT.get_track(flask.request.args['trackId'])
-
         party.playlist.remove(track)  # only owner can add tracks to playlist # todo fix this shit
         # todo removing a track removes all instances of the track in the playlist
 
@@ -223,7 +222,7 @@ def queue():
     return flask.render_template("queue.html",
                                  user=currentUser,
                                  owner=party.owner,
-                                 tracks=playlist.get_tracks(),
+                                 tracks=playlist.get_all_tracks(),
                                  joinId=party.joinId,
                                  isOwner=currentUser == party.owner,
                                  playlists=playlists)
