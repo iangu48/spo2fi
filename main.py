@@ -74,7 +74,7 @@ def index():
         currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
         currentSession = listeningSessions.get(currentUser.id)
         print(SPOTIFY_USERS)
-        print(listeningSessions)
+        print(listeningSessions.keys())
         return flask.render_template("index.html",
                                      user=currentUser,
                                      openSession=currentSession,
@@ -99,7 +99,6 @@ def start():
     playlists = currentUser.get_playlists()
     playlist: spotify.Playlist = None
     for p in playlists:
-        print(p.name, p.name == 'Spo2fi Queue')
         if p.name == 'Spo2fi Queue':
             playlist = p
             break
@@ -113,7 +112,6 @@ def start():
             playlist.replace_tracks(currentUser.currently_playing()['item'])
     except KeyError:  # currently_playing() is a beta endpoint, subject to possible future changes
         usersTopTracks = currentUser.top_tracks(limit=1, time_range='medium_term')
-        print(usersTopTracks)
         playlist.replace_tracks(usersTopTracks[0])
 
     joinId = ''.join(random.choice(string.ascii_uppercase + string.digits) for i in range(4))
@@ -122,7 +120,6 @@ def start():
     listeningSessions[currentUser.id] = ListeningSession(currentUser, [], playlist, joinId)
     parties[joinId] = currentUser.id
 
-    print(currentUser.currently_playing())
     flask.session['party'] = listeningSessions[currentUser.id].joinId
     print(flask.session['party'])
 
@@ -133,6 +130,7 @@ def start():
         flask.flash("Playback device not found.. Please open your Spotify app and begin playing (any random song)",
                     category='error')
         return flask.redirect(flask.url_for('.index'))  # todo handle error
+    print(playlist.tracks)
     return flask.redirect(flask.url_for('.queue'))
 
 
@@ -205,9 +203,10 @@ def removeTrack():
         return "no session currently found"
     else:
         currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
-        track = SPOTIFY_CLIENT.get_track(flask.request.args['trackId'])
-        party.playlist.remove(track)  # only owner can add tracks to playlist # todo fix this shit
-        # todo removing a track removes all instances of the track in the playlist
+        track = SPOTIFY_CLIENT.get_track(flask.request.args['track'])
+        party.playlist.remove_tracks({track.uri: [int(flask.request.args['trackIndex'])]})
+        # todo watch for library update to support this feature
+        # https://github.com/mental32/spotify.py/issues/53
 
         return flask.redirect(flask.url_for('.queue'))
 
@@ -222,7 +221,7 @@ def queue():
     return flask.render_template("queue.html",
                                  user=currentUser,
                                  owner=party.owner,
-                                 tracks=playlist.get_all_tracks(),
+                                 tracks=playlist.get_tracks(),
                                  joinId=party.joinId,
                                  isOwner=currentUser == party.owner,
                                  playlists=playlists)

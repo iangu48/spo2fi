@@ -16,6 +16,7 @@
             <h5>Tracks: </h5>
             <ul class="list-group">
                 {% for track in tracks | reverse %}
+                    {% set size = loop.length %}
                     <li class="list-group-item d-flex align-items-center justify-content-between">
                         <div class="justify-content-start">
                             <div class="row">
@@ -32,7 +33,8 @@
                         {% if isOwner %}
                             <div class="col-auto align-self-center">
                                 <form action="/remove" method="get" class="d-inline-block">
-                                    <input name="trackId" id="trackId" value="{{ track.id }}" type="hidden">
+                                    <input type="hidden" name="track" id="track" value="{{ track }}" >
+                                    <input type="hidden" name="trackIndex" id="trackIndex" value="{{ size - loop.index }}">
                                     <button type="submit" class="btn btn-danger"><span class="fa fa-trash"></span> </button>
                                 </form>
                                 <span class="d-inline-block"></span>
