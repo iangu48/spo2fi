@@ -1,15 +1,22 @@
-from models import ListeningSession
 import os
-import string
 import random
-from typing import Tuple, Dict
+import string
+from typing import Dict
+
 import flask
 import spotify.sync as spotify
+import urllib.parse as urlparse
+import redis
+import pickle
 
+from models import ListeningSession
+
+redisUrl = urlparse.urlparse(os.environ['REDISCLOUD_URL'])
+db = redis.Redis(host=redisUrl.hostname, port=redisUrl.port, password=redisUrl.password)
 
 #  Client Keys
 SPOTIFY_CLIENT_ID = os.environ['SPOTIFY_CLIENT_ID']
-SPOTIFY_CLIENT_SECRET = os.getenv('SPOTIFY_CLIENT_SECRET')
+SPOTIFY_CLIENT_SECRET = os.environ['SPOTIFY_CLIENT_SECRET']
 
 SPOTIFY_CLIENT = spotify.Client(SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET)
 
@@ -37,9 +44,13 @@ OAUTH2_SCOPES = ('user-modify-playback-state',
                  'user-follow-modify')
 OAUTH2: spotify.OAuth2 = spotify.OAuth2(SPOTIFY_CLIENT.id, REDIRECT_URI, scopes=OAUTH2_SCOPES)
 
-SPOTIFY_USERS: Dict[str, spotify.User] = {}
-listeningSessions: Dict[str, ListeningSession] = {}
-parties: Dict[str, str] = {}
+# SPOTIFY_USERS: Dict[str, spotify.User] = {}
+db.set('SPOTIFY_USERS', pickle.dumps(Dict[str, spotify.User]))
+
+# listeningSessions: Dict[str, ListeningSession] = {}
+db.set('listeningSessions', pickle.dumps(Dict[str, ListeningSession]))
+
+# parties: Dict[str, str] = {}
 
 
 @APP.route('/spotify/callback')
@@ -50,11 +61,12 @@ def spotify_callback():
         return flask.redirect('/spotify/failed')
     else:
         key = ''.join(random.choice(string.ascii_uppercase) for _ in range(16))
-        while key in SPOTIFY_USERS:
+        while key in getUsers():
             key = ''.join(random.choice(string.ascii_uppercase) for _ in range(16))
 
         # noinspection PyTypeChecker
-        SPOTIFY_USERS[key] = spotify.User.from_code(SPOTIFY_CLIENT, code, redirect_uri=REDIRECT_URI)
+        saveUser(key, spotify.User.from_code(SPOTIFY_CLIENT, code, redirect_uri=REDIRECT_URI))
+        # SPOTIFY_USERS[key] = spotify.User.from_code(SPOTIFY_CLIENT, code, redirect_uri=REDIRECT_URI)
 
         flask.session['spotify_user_id'] = key
 
@@ -71,10 +83,10 @@ def spotify_failed():
 @APP.route('/index')
 def index():
     try:
-        currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
-        currentSession = listeningSessions.get(currentUser.id)
-        print(SPOTIFY_USERS)
-        print(listeningSessions)
+        currentUser = getUser(flask.session['spotify_user_id'])
+        currentSession = getListeningSession(currentUser.id)
+        print(getUsers())
+        print(getListeningSessions())
         return flask.render_template("index.html",
                                      user=currentUser,
                                      openSession=currentSession,
@@ -86,8 +98,8 @@ def index():
 
 @APP.route('/newSession')
 def start():
-    currentUser: spotify.User = SPOTIFY_USERS[flask.session['spotify_user_id']]
-    if currentUser.id in listeningSessions:
+    currentUser: spotify.User = getUser(flask.session['spotify_user_id'])
+    if currentUser.id in getListeningSessions():
         # todo check if idiot user deletes playlist
         return flask.redirect(flask.url_for('.queue'))
     try:
@@ -117,13 +129,16 @@ def start():
         playlist.replace_tracks(usersTopTracks[0])
 
     joinId = ''.join(random.choice(string.ascii_uppercase + string.digits) for i in range(4))
-    while joinId in parties:
+    while joinId in db.hkeys('parties'):
         joinId = ''.join(random.choice(string.ascii_uppercase + string.digits) for i in range(4))
-    listeningSessions[currentUser.id] = ListeningSession(currentUser, [], playlist, joinId)
-    parties[joinId] = currentUser.id
+    saveListeningSession(currentUser, ListeningSession(currentUser, [], playlist, joinId))
+    # listeningSessions[currentUser.id] = ListeningSession(currentUser, [], playlist, joinId)
+    saveParty(joinId, currentUser.id)
+    # parties[joinId] = currentUser.id
 
     print(currentUser.currently_playing())
-    flask.session['party'] = listeningSessions[currentUser.id].joinId
+    flask.session['party'] = getListeningSession(currentUser.id).joinId
+    # flask.session['party'] = listeningSessions[currentUser.id].joinId
     print(flask.session['party'])
 
     try:
@@ -138,18 +153,18 @@ def start():
 
 @APP.route('/join')
 def join():
-    currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+    currentUser = getUser(flask.session['spotify_user_id'])
     try:
         joinId = str.upper(flask.request.args['joinId'])
-        ownerId = parties[joinId]
-        party = listeningSessions[ownerId]
+        ownerId = getParty(joinId)
+        listenSess = getListeningSession(ownerId)
     except KeyError:
         flask.flash('Code not found', category='error')
         return flask.redirect('/')
     else:
-        if currentUser not in party.members:
-            party.members.append(currentUser)
-        flask.session['party'] = party.joinId
+        if currentUser not in listenSess.members:
+            listenSess.members.append(currentUser)
+        flask.session['party'] = listenSess.joinId
         return flask.redirect(flask.url_for('.queue'))
 
 
@@ -160,10 +175,10 @@ def search():
     except KeyError:
         return "no query entered"
     else:
-        currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+        currentUser = getUser(flask.session['spotify_user_id'])
         results = SPOTIFY_CLIENT.search(query, limit=10)
-        ownerId = parties[flask.session['party']]
-        party = listeningSessions[ownerId]
+        ownerId = getParty(flask.session['party'])
+        party = getListeningSession(ownerId)
         return flask.render_template("search.html",
                                      user=currentUser,
                                      owner=party.owner,
@@ -179,13 +194,13 @@ def search():
 def addToQueue():
     try:
         print(flask.session['party'])
-        ownerId = parties[flask.session['party']]
-        party = listeningSessions[ownerId]
+        ownerId = getParty(flask.session['party'])
+        party = getListeningSession(ownerId)
         print(party)
     except KeyError:
         return "no session currently found"
     else:
-        currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+        currentUser = getUser(flask.session['spotify_user_id'])
         track = SPOTIFY_CLIENT.get_track(flask.request.args['trackId'])
 
         # party.owner.add_tracks(party.playlist, track)  # only owner can add tracks to playlist
@@ -198,13 +213,13 @@ def addToQueue():
 def removeTrack():
     try:
         print(flask.session['party'])
-        ownerId = parties[flask.session['party']]
-        party = listeningSessions[ownerId]
+        ownerId = getParty(flask.session['party'])
+        party = getListeningSession(ownerId)
         print(party)
     except KeyError:
         return "no session currently found"
     else:
-        currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+        currentUser = getUser(flask.session['spotify_user_id'])
         track = SPOTIFY_CLIENT.get_track(flask.request.args['trackId'])
 
         party.playlist.remove(track)  # only owner can add tracks to playlist # todo fix this shit
@@ -215,9 +230,9 @@ def removeTrack():
 
 @APP.route('/queue')
 def queue():
-    ownerId = parties[flask.session['party']]
-    party = listeningSessions[ownerId]
-    currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+    ownerId = getParty(flask.session['party'])
+    party = getListeningSession(ownerId)
+    currentUser = getUser(flask.session['spotify_user_id'])
     playlist = party.playlist
     playlists = currentUser.get_all_playlists()
     return flask.render_template("queue.html",
@@ -233,16 +248,55 @@ def queue():
 def playTrack():
     try:
         print(flask.session['party'])
-        ownerId = parties[flask.session['party']]
-        party = listeningSessions[ownerId]
-        print(party)
+        ownerId = getParty(flask.session['party'])
+        listeningSession = getListeningSession(ownerId)
+        print(listeningSession)
     except KeyError:
         return "no session currently found"
     else:
-        currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+        currentUser = getUser(flask.session['spotify_user_id'])
         track = flask.request.args['track']
-        party.owner.get_player().play(party.playlist.uri, offset=track)
+        listeningSession.owner.get_player().play(listeningSession.playlist.uri, offset=track)
         return flask.redirect(flask.url_for('.queue'))
+
+
+# db helpers
+def saveUser(sessionUserId: str, user: spotify.User):
+    users = pickle.loads(db.get('SPOTIFY_USERS'))
+    users[sessionUserId] = user
+    p = pickle.dumps(users)
+    db.set('SPOTIFY_USERS', p)
+
+
+def getUser(sessionUserId: str) -> spotify.User:
+    return pickle.loads(db.get('SPOTIFY_USERS'))[sessionUserId]
+
+
+def getUsers():
+    return pickle.loads(db.get('SPOTIFY_USERS'))
+
+
+def saveListeningSession(ownerId: str, listeningSession: ListeningSession):
+    sessions = pickle.loads(db.get('listeningSessions'))
+    sessions[ownerId] = listeningSession
+    p = pickle.dumps(sessions)
+    db.set('listeningSessions', p)
+
+
+def getListeningSession(ownerId: str) -> ListeningSession:
+    return pickle.loads(db.get('listeningSessions'))[ownerId]
+
+
+def getListeningSessions():
+    return pickle.loads(db.get('listeningSessions'))
+
+
+def saveParty(joinId: str, userId: str):
+    db.hset('parties', joinId, userId)
+
+
+def getParty(joinId: str):
+    return db.hget('parties', joinId)
 
 
 if __name__ == '__main__':
