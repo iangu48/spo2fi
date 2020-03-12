@@ -96,7 +96,7 @@ def start():
         flask.flash("Playback device not found.. Please open your Spotify app and begin playing (any random song)",
                     category='error')
         return flask.redirect(flask.url_for('.index'))  # todo handle error
-    playlists = currentUser.get_playlists()
+    playlists = currentUser.get_playlists()  # todo empty playlists are not included
     playlist: spotify.Playlist = None
     for p in playlists:
         if p.name == 'Spo2fi Queue':
@@ -104,13 +104,14 @@ def start():
             break
 
     if not playlist:
+        # noinspection PyTypeChecker
         playlist = currentUser.create_playlist('Spo2fi Queue', collaborative=True, public=False)
         # currentUser.client.http.upload_playlist_cover_image(playlist.id, ) todo upload Spo2fi logo
 
     try:
         if currentUser.currently_playing()['is_playing']:
             playlist.replace_tracks(currentUser.currently_playing()['item'])
-    except KeyError:  # currently_playing() is a beta endpoint, subject to possible future changes
+    except KeyError:  # new users don't have any top tracks
         usersTopTracks = currentUser.top_tracks(limit=1, time_range='medium_term')
         playlist.replace_tracks(usersTopTracks[0])
 
@@ -130,7 +131,6 @@ def start():
         flask.flash("Playback device not found.. Please open your Spotify app and begin playing (any random song)",
                     category='error')
         return flask.redirect(flask.url_for('.index'))  # todo handle error
-    print(playlist.tracks)
     return flask.redirect(flask.url_for('.queue'))
 
 
@@ -204,9 +204,7 @@ def removeTrack():
     else:
         currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
         track = SPOTIFY_CLIENT.get_track(flask.request.args['track'])
-        party.playlist.remove_tracks({track.uri: [int(flask.request.args['trackIndex'])]})
-        # todo watch for library update to support this feature
-        # https://github.com/mental32/spotify.py/issues/53
+        party.playlist.remove_tracks((track, [int(flask.request.args['trackIndex'])]))
 
         return flask.redirect(flask.url_for('.queue'))
 
