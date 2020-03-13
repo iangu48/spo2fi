@@ -73,8 +73,8 @@ def index():
     try:
         currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
         currentSession = listeningSessions.get(currentUser.id)
-        print(SPOTIFY_USERS)
-        print(listeningSessions.keys())
+        print('current users: ', SPOTIFY_USERS)
+        print('parties: ', listeningSessions.keys())
         return flask.render_template("index.html",
                                      user=currentUser,
                                      openSession=currentSession,
@@ -95,7 +95,7 @@ def start():
     except KeyError:
         flask.flash("Playback device not found.. Please open your Spotify app and begin playing (any random song)",
                     category='error')
-        return flask.redirect(flask.url_for('.index'))  # todo handle error
+        return flask.redirect(flask.url_for('.index'))
     playlists = currentUser.get_playlists()  # todo empty playlists are not included
     playlist: spotify.Playlist = None
     for p in playlists:
@@ -122,7 +122,7 @@ def start():
     parties[joinId] = currentUser.id
 
     flask.session['party'] = listeningSessions[currentUser.id].joinId
-    print(flask.session['party'])
+    print('user ', currentUser.display_name, ' joined ' , flask.session['party'])
 
     try:
         currentUser.get_player().play(playlist)
@@ -176,10 +176,9 @@ def search():
 @APP.route('/add')
 def addToQueue():
     try:
-        print(flask.session['party'])
         ownerId = parties[flask.session['party']]
         party = listeningSessions[ownerId]
-        print(party)
+        print('track added to ', flask.session['party'])
     except KeyError:
         return "no session currently found"
     else:
@@ -195,10 +194,9 @@ def addToQueue():
 @APP.route('/remove')
 def removeTrack():
     try:
-        print(flask.session['party'])
         ownerId = parties[flask.session['party']]
         party = listeningSessions[ownerId]
-        print(party)
+        print('track removed from ', flask.session['party'])
     except KeyError:
         return "no session currently found"
     else:
@@ -228,14 +226,19 @@ def queue():
 @APP.route('/playTrack')
 def playTrack():
     try:
-        print(flask.session['party'])
         ownerId = parties[flask.session['party']]
         party = listeningSessions[ownerId]
-        print(party)
     except KeyError:
         return "no session currently found"
     else:
         currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+        try:
+            currentUser.currently_playing()['item']
+        except KeyError:
+            flask.flash("Playback device not found.. Please open your Spotify app and begin playing",
+                        category='error')
+            return flask.redirect(flask.url_for('.index'))
+
         track = flask.request.args['track']
         party.owner.get_player().play(party.playlist.uri, offset=track)
         return flask.redirect(flask.url_for('.queue'))
