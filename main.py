@@ -237,7 +237,7 @@ def playTrack():
         except KeyError:
             flask.flash("Playback device not found.. Please open your Spotify app and begin playing",
                         category='error')
-            return flask.redirect(flask.url_for('.index'))
+            return flask.redirect(flask.url_for('.queue'))
 
         track = flask.request.args['track']
         party.owner.get_player().play(party.playlist.uri, offset=track)
