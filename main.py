@@ -244,5 +244,49 @@ def playTrack():
         return flask.redirect(flask.url_for('.queue'))
 
 
+@APP.route('/next')
+def nextTrack():
+    print("ntext")
+    try:
+        ownerId = parties[flask.session['party']]
+        party = listeningSessions[ownerId]
+    except KeyError:
+        return "no session currently found"
+    else:
+        currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+        try:
+            currentUser.currently_playing()['item']
+        except KeyError:
+            flask.flash("Playback device not found.. Please open your Spotify app and begin playing",
+                        category='error')
+            return flask.redirect(flask.url_for('.queue'))
+        party.owner.get_player().next()
+        return flask.redirect(flask.url_for('.queue'))
+
+
+@APP.route('/prev')
+def previousTrack():
+    try:
+        ownerId = parties[flask.session['party']]
+        party = listeningSessions[ownerId]
+    except KeyError:
+        return "no session currently found"
+    else:
+        currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+        try:
+            currentUser.currently_playing()['item']
+        except KeyError:
+            flask.flash("Playback device not found.. Please open your Spotify app and begin playing",
+                        category='error')
+            return flask.redirect(flask.url_for('.queue'))
+        party.owner.get_player().previous()
+        return flask.redirect(flask.url_for('.queue'))
+
+
+def checkEnd(party: ListeningSession):
+    return
+    #  todo call this method everytime endpoint /queue, /playTrack, /remove
+
+
 if __name__ == '__main__':
     APP.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)), debug=False)

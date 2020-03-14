@@ -45,6 +45,12 @@
                         <div class="w-100"></div>
                         <span class="text-muted font-weight-light text-center">{{ currentTrack.artists[0].name }}</span>
                     </div>
+                    {% if isOwner %}
+                        <div class="col-auto">
+                            <a class="btn btn-primary" href="/prev"><span class="fa fa-chevron-left"></span></a>
+                            <a class="btn btn-primary" href="/next"><span class="fa fa-chevron-right"></span></a>
+                        </div>
+                        {% endif %}
                 </div>
 
                 {% set songProgress =  owner.currently_playing().progress_ms / currentTrack.duration * 100 %}
