@@ -158,6 +158,9 @@ def search():
     except KeyError:
         return "no query entered"
     else:
+        if not query:
+            flask.flash('Empty search query', category='error')
+            return flask.redirect(flask.url_for('.queue'))
         currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
         results = SPOTIFY_CLIENT.search(query, limit=10)
         ownerId = parties[flask.session['party']]
