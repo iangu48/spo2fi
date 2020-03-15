@@ -83,8 +83,7 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
     <script>
         $(document).ready(function() {
-            console.log("ready");
-                window.setInterval(moveProgressBar, 1000);
+                let id = window.setInterval(moveProgressBar, 1000);
             }
         );
 
@@ -97,6 +96,7 @@
 
             if (num > totalSeconds) {
                 location.reload(true);
+                window.clearInterval(id);
                 return
             }
             bar.css('width', num/totalSeconds*100 + '%').attr('aria-valuenow', num/totalSeconds*100)
