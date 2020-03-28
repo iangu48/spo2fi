@@ -17,10 +17,18 @@
         <li class="list-group-item bg-light">
             <form method="get" action="/add">
             <input name="trackId" id="trackId" value="{{ track.id }}" type="hidden">
-                <div class="d-flex justify-content-between bg-light align-items-center">
-                    <img src="{{ track.album.images[0].url}}" alt="img" width="90" height="90">
-                    <span>{{ track.name }} - {{ track.artists[0].name }} </span>
-                    <button type="submit" class="btn btn-primary btn-lg"><span class="fa fa-plus"></span></button>
+                <div class="row d-flex align-items-center justify-content-between">
+                    <div class="col-3 d-inline-block">
+                        <img src="{{ track.album.images[0].url}}" alt="img" width="50" height="50">
+                    </div>
+                    <div class="col-6 align-self-center flex-grow-1 d-inline-block">
+                        <span class="text-center">{{ track.name }} </span>
+                        <div class="w-100"></div>
+                        <span class="text-muted font-weight-light">{{ track.artists[0].name }}</span>
+                    </div>
+                    <div class="col-3 align-self-center">
+                        <button type="submit" class="btn btn-primary d-inline-block"><span class="fa fa-plus"></span></button>
+                    </div>
                 </div>
             </form>
         </li>
