@@ -1,15 +1,30 @@
 {% extends "base.html" %}
 {% block title %} Spo2fi - Queue with friends {% endblock %}
 {% block content %}
-    <form action="/search" method="get">
-        <div class="input-group">
-            <input type="text" class="form-control" id="query" name="query" placeholder="search"
-            aria-label="Search" aria-describedby="search" autocomplete="off">
-            <div class="input-group-append">
-                <button type="submit" class="btn btn-success"><span class="fa fa-search"></span></button>
+    <div class="row">
+        <div class="col-12">
+            <form action="/search" method="get">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="query" name="query" placeholder="search"
+                           aria-label="Search" aria-describedby="search" autocomplete="off">
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-success"><span class="fa fa-search"></span></button>
+                    </div>
+                </div>
+            </form>
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">View Playlists</button>
+                <div class="dropdown-menu">
+                    <a class="dropdown-item" href="/{{ owner.id }}/playlists/0">{{ owner.display_name }}</a>
+                    <div class="dropdown-divider"></div>
+                    {% for member in members %}
+                        <a class="dropdown-item" href="/{{ member.id }}/playlists/0">{{ member.display_name }}</a>
+                    {% endfor %}
+                </div>
             </div>
         </div>
-    </form>
+    </div>
+
     <br>
     <div class="row">
         <div class="col-12">
@@ -21,7 +36,7 @@
                         <div class="justify-content-start">
                             <div class="row">
                                 <div class="col-auto d-inline-block">
-                                    <img src="{{ track.album.images[0].url}}" alt="img" width="90" height="90">
+                                    <img src="{{ track.album.images[0].url }}" alt="img" width="90" height="90">
                                 </div>
                                 <div class="col-auto align-self-center flex-grow-1 d-inline-block">
                                     <span class="text-center">{{ track.name }} </span>
@@ -33,14 +48,17 @@
                         {% if isOwner %}
                             <div class="col-auto align-self-center">
                                 <form action="/remove" method="get" class="d-inline-block">
-                                    <input type="hidden" name="track" id="track" value="{{ track }}" >
-                                    <input type="hidden" name="trackIndex" id="trackIndex" value="{{ size - loop.index }}">
-                                    <button type="submit" class="btn btn-danger"><span class="fa fa-trash"></span> </button>
+                                    <input type="hidden" name="track" id="track" value="{{ track }}">
+                                    <input type="hidden" name="trackIndex" id="trackIndex"
+                                           value="{{ size - loop.index }}">
+                                    <button type="submit" class="btn btn-danger"><span class="fa fa-trash"></span>
+                                    </button>
                                 </form>
                                 <span class="d-inline-block"></span>
                                 <form action="/playTrack" method="get" class="d-inline-block">
                                     <input type="hidden" name="track" id="track" value="{{ track }}">
-                                    <button type="submit" class="btn btn-success"><span class="fa fa-play"></span></button>
+                                    <button type="submit" class="btn btn-success"><span class="fa fa-play"></span>
+                                    </button>
                                 </form>
                             </div>
                         {% else %}
