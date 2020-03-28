@@ -7,11 +7,12 @@
               integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
               crossorigin="anonymous">
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     {% endblock %}
 
     {% block header %}
         <div class="container">
+
             {% with errors = get_flashed_messages(category_filter=['error']) %}
             {% if errors %}
                 <br>
@@ -21,15 +22,18 @@
             {% endif %}
             {% endwith %}
             <br>
+            <a href="/" class="btn btn-primary align-self-center"><span class="fa fa-home"></span> Home </a>
+
             <div class="row">
                 <div class="col-12 d-flex justify-content-between mb-3">
                     <div class="d-inline-block">
                         <h3 class="mb-0">{{ owner.display_name }}</h3>
                         {% if isOwner %} <span class="badge badge-warning mt-0">Party Owner</span> {% endif %}
                     </div>
-                        <h3 class="d-inline-block">
-                            {% if joinId is defined %}<span class="badge badge-info">Code: {{ joinId }}</span>{% endif %}
-                        </h3>
+                    <h3 class="d-inline-block align-self-center">
+                        {% if joinId is defined %}<span class="badge badge-info">Code: {{ joinId }}</span>{% endif %}
+                    </h3>
+
                 </div>
             </div>
 
@@ -45,12 +49,6 @@
                         <div class="w-100"></div>
                         <span class="text-muted font-weight-light text-center">{{ currentTrack.artists[0].name }}</span>
                     </div>
-                    {% if isOwner %}
-                        <div class="col-auto">
-                            <a class="btn btn-primary" href="/prev"><span class="fa fa-chevron-left"></span></a>
-                            <a class="btn btn-primary" href="/next"><span class="fa fa-chevron-right"></span></a>
-                        </div>
-                        {% endif %}
                 </div>
 
                 {% set songProgress =  owner.currently_playing().progress_ms / currentTrack.duration * 100 %}
@@ -67,6 +65,21 @@
                     </div>
                 </div>
                 <br>
+                {% if isOwner %}
+                    <div class="row fixed-bottom bg-info">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-center">
+                                <a class="btn btn-primary" href="/prev">
+                                    <span class="fa fa-chevron-left"></span>
+                                    <span class="fa fa-chevron-left"></span></a>
+                                <a class="btn btn-primary" href="/next">
+                                    <span class="fa fa-chevron-right"></span>
+                                    <span class="fa fa-chevron-right"></span></a>
+                            </div>
+                        </div>
+
+                    </div>
+                {% endif %}
             {% else %}
                 not currently playing
             {% endif %}
