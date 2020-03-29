@@ -2,7 +2,7 @@ from models import ListeningSession
 import os
 import string
 import random
-from typing import Tuple, Dict
+from typing import Dict
 import flask
 import spotify.sync as spotify
 
