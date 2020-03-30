@@ -8,7 +8,7 @@ import random
 from typing import Dict
 
 
-bp = Blueprint('auth', __name__, template_folder='templates')
+bp = Blueprint('auth', __name__)
 
 #  Client Keys
 SPOTIFY_CLIENT_ID = os.environ['SPOTIFY_CLIENT_ID']
