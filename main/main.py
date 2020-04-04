@@ -1,7 +1,6 @@
 import os
 import random
 import string
-
 import flask
 import spotify.sync as spotify
 import auth
@@ -12,6 +11,12 @@ APP = flask.Flask(__name__)
 APP.register_blueprint(auth.bp)
 APP.secret_key = os.environ['SESSION_SECRET_KEY']
 APP.config.from_mapping({'spotify_client': SPOTIFY_CLIENT})
+
+
+@APP.errorhandler(500)
+def error500(e):
+    flask.flash(str(e), category="error")
+    return flask.redirect(flask.url_for('.index'))
 
 
 @APP.route('/')
@@ -35,6 +40,7 @@ def start():
     currentUser: spotify.User = SPOTIFY_USERS[flask.session['spotify_user_id']]
     if currentUser.id in listeningSessions:
         # todo check if idiot user deletes playlist
+        flask.flash("You are already owner of a session", category="error")
         return flask.redirect(flask.url_for('.queue'))
     try:
         currentUser.currently_playing()['item']
@@ -52,6 +58,8 @@ def start():
     if not playlist:
         # noinspection PyTypeChecker
         playlist = currentUser.create_playlist('Spo2fi Queue', collaborative=True, public=False)
+        currentUser.edit_playlist(playlist, description="Queue songs with friends! Warning: do not delete or your "
+                                                        "party will not work as intended")
         # currentUser.client.http.upload_playlist_cover_image(playlist.id, ) todo upload Spo2fi logo
 
     try:
