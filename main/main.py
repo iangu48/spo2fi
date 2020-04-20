@@ -5,12 +5,12 @@ from typing import List
 
 from flask import flash, redirect, url_for, Flask, render_template, session, request, jsonify
 import spotify.sync as spotify
-import auth
-from auth import SPOTIFY_CLIENT, SPOTIFY_USERS, listeningSessions, OAUTH2, partyIdMap
+# import auth
+from auth import SPOTIFY_CLIENT, SPOTIFY_USERS, listeningSessions, OAUTH2, partyIdMap, bp
 from models import ListeningSession
 
 APP = Flask(__name__)
-APP.register_blueprint(auth.bp)
+APP.register_blueprint(bp)
 APP.secret_key = os.environ['SESSION_SECRET_KEY']
 APP.config.from_mapping({'spotify_client': SPOTIFY_CLIENT})
 
