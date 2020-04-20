@@ -7,7 +7,7 @@ import flask
 import spotify.sync as spotify
 from flask import Blueprint
 
-from models import ListeningSession
+from main.models import ListeningSession
 
 bp = Blueprint('auth', __name__)
 
