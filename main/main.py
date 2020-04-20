@@ -3,6 +3,9 @@ import random
 import string
 from typing import List
 
+# for heroku deployment, use
+# main.models
+# main.auth
 from flask import flash, redirect, url_for, Flask, render_template, session, request, jsonify
 import spotify.sync as spotify
 import main.auth as auth
