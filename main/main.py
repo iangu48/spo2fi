@@ -6,8 +6,8 @@ from typing import List
 import flask
 from flask import flash, redirect, url_for, Flask, render_template, session, request, jsonify
 import spotify.sync as spotify
-import auth
-from auth import SPOTIFY_CLIENT, SPOTIFY_USERS, listeningSessions, OAUTH2, partyIdMap
+import .auth
+from .auth import SPOTIFY_CLIENT, SPOTIFY_USERS, listeningSessions, OAUTH2, partyIdMap
 from models import ListeningSession
 
 APP = Flask(__name__)
