@@ -14,12 +14,12 @@
         <div class="container">
 
             {% with errors = get_flashed_messages(category_filter=['error']) %}
-            {% if errors %}
-                <br>
-                {% for error in errors %}
-                    <div class="alert alert-warning"> {{ error }} </div>
-                {% endfor %}
-            {% endif %}
+                {% if errors %}
+                    <br>
+                    {% for error in errors %}
+                        <div class="alert alert-warning"> {{ error }} </div>
+                    {% endfor %}
+                {% endif %}
             {% endwith %}
             <br>
             <a href="/" class="btn btn-primary align-self-center"><span class="fa fa-home"></span> Home </a>
@@ -39,45 +39,64 @@
 
             {% if owner.currently_playing().is_playing == True %}
                 {% set currentTrack = owner.currently_playing().item %}
-                <div class="row">
-                    <div class="col-auto">
-                        <img src="{{ currentTrack.album.images[0].url}}" alt="img" width="90" height="90">
-
+                <div class="row mb-3 flex-nowrap">
+                    <div class="col-4 d-inline-block align-self-center">
+                        <img src="{{ currentTrack.album.images[0].url }}" alt="img" width="90" height="90">
                     </div>
-                    <div class="col-6 align-self-center">
-                        <span class="text-center">{{ currentTrack.name }} </span>
-                        <div class="w-100"></div>
-                        <span class="text-muted font-weight-light text-center">{{ currentTrack.artists[0].name }}</span>
+                    <div class="col-8 align-self-center p-0 d-inline-block">
+                        <div class="col-12 p-0">
+                            <div class="d-inline-block col-11 text-truncate p-0">{{ currentTrack.name }}</div>
+                            <br>
+                            <div class="d-inline-block col-11 text-truncate text-muted font-weight-light p-0">{{ currentTrack.artists[0].name }}</div>
+                        </div>
                     </div>
                 </div>
 
                 {% set songProgress =  owner.currently_playing().progress_ms / currentTrack.duration * 100 %}
-                <p>Duration:
-                    <span id="songSecondsPassed"> {{ owner.currently_playing().progress_ms // 1000 }}</span>
-                    /
-                    <span id="songTotalSeconds"> {{ currentTrack.duration // 1000 }}</span>
-                </p>
-                <div class="progress">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{ songProgress }}%"
-                         aria-valuenow="{{ songProgress }}" id="songProgress"
-                         aria-valuemin="0"
-                         aria-valuemax="100">
-                    </div>
-                </div>
-                <br>
-                {% if isOwner %}
-                    <div class="row fixed-bottom bg-info">
-                        <div class="col-12">
-                            <div class="d-flex justify-content-center">
-                                <a class="btn btn-primary" href="/prev">
-                                    <span class="fa fa-chevron-left"></span>
-                                    <span class="fa fa-chevron-left"></span></a>
-                                <a class="btn btn-primary" href="/next">
-                                    <span class="fa fa-chevron-right"></span>
-                                    <span class="fa fa-chevron-right"></span></a>
+
+                <meta id="metadata"
+                      data-elapsed="{{ owner.currently_playing().progress_ms // 1000 }}"
+                      data-length="{{ currentTrack.duration // 1000 }}">
+
+                <div class="row">
+                    <div class="col-12">
+
+                        <div class="align-self-center p-0">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                                     style="width: {{ songProgress }}%"
+                                     aria-valuenow="{{ songProgress }}" id="songProgress"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100">
+                                </div>
                             </div>
                         </div>
 
+                    </div>
+                    <div class="col-12 d-flex justify-content-between">
+                        <span id="songSecondsPassed" class="col-1 p-0 mr-1">0:00</span>
+                        <span id="songTotalSeconds" class="col-1 p-0 ml-1"></span>
+                    </div>
+                </div>
+
+                <br>
+                {% if isOwner %}
+                    <div class="fixed-bottom">
+                        <div class="row">
+                            <div class="col-12 d-flex justify-content-center">
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-light" onclick="previous(this)">
+                                        <i class="fa fa-step-backward"></i>
+                                    </button>
+                                    <button class="btn btn-light" onclick="pauseResume(this)">
+                                        <i class="fa fa-pause"></i>
+                                    </button>
+                                    <button class="btn btn-light" onclick="next(this)">
+                                        <i class="fa fa-step-forward"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 {% endif %}
             {% else %}
@@ -91,28 +110,137 @@
 <div class="container"> {% block content %} {% endblock %} </div>
 {% block footer %}
     <script src="https://use.fontawesome.com/releases/v5.12.1/js/all.js" data-search-pseudo-elements></script>
-    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+            integrity="sha384-vk5WoKIaW/vJyUAd9n/wmopsmNhiy+L2Z+SBxGYnUkunIxVxAv/UtMOhba/xskxh"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+            integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+            crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+            integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+            crossorigin="anonymous"></script>
     <script>
-        $(document).ready(function() {
-                let id = window.setInterval(moveProgressBar, 1000);
+        let paused = false;
+        let id;
+        let metadata;
+
+        let songLength = 100;
+        let songProgress = 1;
+
+        let elapsedDisplay;
+        let songTotalDisplay;
+        let bar;
+
+
+        let pauseResume;
+        $(document).ready(function () {
+                id = window.setInterval(moveProgressBar, 1000);
+                metadata = $('#metadata');
+                songLength = metadata.data()['length'];
+                songProgress = metadata.data()['elapsed'];
+                console.log(songLength, songProgress);
+                bar = $('#songProgress');
+                elapsedDisplay = $('#songSecondsPassed');
+                songTotalDisplay = $('#songTotalSeconds');
+
+                songTotalDisplay.text(secondsToPretty(songLength));
+
+                pauseResume = function (e) {
+                    {#todo fix this#}
+                    $(e)
+                        .find('[data-fa-i2svg]')
+                        .toggleClass('fa-play')
+                        .toggleClass('fa-pause');
+                    $(e).button('toggle');
+                    if (paused) {
+                        $.ajax({
+                            url: '/resume',
+                            type: 'get',
+                            success: function (res) {
+                            },
+                            error: function (error) {
+                                console.log(error)
+                            }
+                        })
+                    } else {
+                        $.ajax({
+                            url: '/pause',
+                            type: 'get',
+                            success: function (res) {
+                            },
+                            error: function (error) {
+                                console.log(error)
+                            }
+                        })
+                    }
+                    paused = !paused;
+                }
             }
         );
 
         function moveProgressBar() {
-            let bar = $('#songProgress');
-            let secondsPassed = $('#songSecondsPassed');
-            let totalSeconds = $('#songTotalSeconds').text();
-            let num = parseInt(secondsPassed.text()) + 1;
-            secondsPassed.text(num);
+            if (!paused) {
+                songProgress += 1;
 
-            if (num > totalSeconds + 1) {
-                location.reload(true);
-                window.clearInterval(id);
-                return
+                if (songProgress > songLength + 1) {
+                    location.reload(true);
+                    window.clearInterval(id);
+                    return
+                }
+                elapsedDisplay.text(secondsToPretty(songProgress));
+
+                bar.css('width', songProgress / songLength * 100 + '%').attr('aria-valuenow', songProgress / songLength * 100);
             }
-            bar.css('width', num/totalSeconds*100 + '%').attr('aria-valuenow', num/totalSeconds*100)
+        }
+
+        function secondsToPretty(value) {
+            return Math.floor(value / 60) + ":" + (value % 60 < 10 ? '0' : '') + (value % 60 ? value % 60 : '0');
+        }
+
+        function previous(e) {
+            if (songProgress > 5) {
+                $.ajax({
+                    url: '/restart',
+                    type: 'get',
+                    success: function (res) {
+                        location.reload()
+                    },
+                    error: function (error) {
+                        console.log(error)
+                    }
+                })
+            } else {
+                $.ajax({
+                    url: '/prev',
+                    type: 'get',
+                    success: function (res) {
+                        location.reload()
+                    },
+                    error: function (error) {
+                        console.log(error)
+                    }
+                })
+            }
+        }
+
+        function next(e) {
+            $.ajax({
+                url: '/next',
+                type: 'get',
+                success: function (res) {
+                    location.reload()
+                },
+                error: function (error) {
+                    console.log(error)
+                }
+            })
+        }
+
+        function remove(del) {
+            let r = confirm("Remove from queue?")
+            if (r) {
+                {#todo remove track ajax#}
+            }
         }
 
     </script>

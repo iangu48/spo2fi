@@ -1,21 +1,22 @@
-{#{% extends "base.html" %}#}
+{% extends "base.html" %}
 {% block title %} Spo2fi - Queue with friends {% endblock %}
 {% block content %}
     <br>
     <h5>Playlists: </h5>
     <ul class="list-group">
         {% for playlist in results %}
-        <li class="list-group-item bg-light">
-        {{ playlist.name }}
-{#            <form method="get" action="/add">#}
-{#            <input name="trackId" id="trackId" value="{{ track.id }}" type="hidden">#}
-{#                <div class="d-flex justify-content-between bg-light align-items-center">#}
-{#                    <img src="{{ track.album.images[0].url}}" alt="img" width="90" height="90">#}
-{#                    <span>{{ track.name }} - {{ track.artists[0].name }} </span>#}
-{#                    <button type="submit" class="btn btn-primary btn-lg"><span class="fa fa-plus"></span></button>#}
-{#                </div>#}
-{#            </form>#}
-        </li>
+            <li class="list-group-item bg-light">
+                <a href="/{{ user.id }}/{{ offset }}/{{ playlist.id }}/0">
+                    <div class="d-flex justify-content-between bg-light align-items-center">
+                        <div class="col-auto d-inline-block">
+                            <img src="{{ playlist.images[0].url}}" alt="img" width="90" height="90">
+                        </div>
+                        <div class="col-auto align-self-center flex-grow-1 d-inline-block">
+                            <span>{{ playlist.name }} </span>
+                        </div>
+                    </div>
+                </a>
+            </li>
         {% endfor %}
     </ul>
 

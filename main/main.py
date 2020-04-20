@@ -1,13 +1,16 @@
 import os
 import random
 import string
+from typing import List
+
 import flask
+from flask import flash, redirect, url_for, Flask, render_template, session, request, jsonify
 import spotify.sync as spotify
 import auth
 from auth import SPOTIFY_CLIENT, SPOTIFY_USERS, listeningSessions, OAUTH2, partyIdMap
 from models import ListeningSession
 
-APP = flask.Flask(__name__)
+APP = Flask(__name__)
 APP.register_blueprint(auth.bp)
 APP.secret_key = os.environ['SESSION_SECRET_KEY']
 APP.config.from_mapping({'spotify_client': SPOTIFY_CLIENT})
@@ -15,40 +18,71 @@ APP.config.from_mapping({'spotify_client': SPOTIFY_CLIENT})
 
 @APP.errorhandler(500)
 def error500(e):
-    flask.flash(str(e), category="error")
-    return flask.redirect(flask.url_for('.index'))
+    flash(str(e), category="error")
+    return redirect(url_for('.index'))
 
 
 @APP.route('/')
 def index():
     try:
-        currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+        currentUser = SPOTIFY_USERS[session['spotify_user_id']]
         currentSession = listeningSessions.get(currentUser.id)
+        
+        if currentUser.id in listeningSessions:
+            ownerId = partyIdMap[session['party']]
+            party = listeningSessions[ownerId]
+            playlist = party.playlist
+            playlists = currentUser.get_all_playlists()
+            return render_template("queue.html",
+                                         user=currentUser,
+                                         owner=party.owner,
+                                         tracks=playlist.get_tracks(),
+                                         joinId=party.joinId,
+                                         isOwner=currentUser == party.owner,
+                                         playlists=playlists,
+                                         members=party.members)
+        else:
+            try:
+                ownerId = partyIdMap[session['party']]
+                party = listeningSessions[ownerId]
+                playlist = party.playlist
+                playlists = currentUser.get_all_playlists()
+                return render_template("queue.html",
+                                       user=currentUser,
+                                       owner=party.owner,
+                                       tracks=playlist.get_tracks(),
+                                       joinId=party.joinId,
+                                       isOwner=currentUser == party.owner,
+                                       playlists=playlists,
+                                       members=party.members)
+            except KeyError as e:
+                print(e)
+
         print('current users: ', SPOTIFY_USERS)
         print('parties: ', listeningSessions.keys())
-        return flask.render_template("index.html",
+        return render_template("index.html",
                                      user=currentUser,
                                      openSession=currentSession,
                                      owner=currentUser,
                                      isOwner=False)
     except KeyError:
-        return flask.redirect(OAUTH2.url)
+        return redirect(OAUTH2.url)
 
 
 @APP.route('/newSession')
 def start():
-    currentUser: spotify.User = SPOTIFY_USERS[flask.session['spotify_user_id']]
+    currentUser: spotify.User = SPOTIFY_USERS[session['spotify_user_id']]
     if currentUser.id in listeningSessions:
         # todo check if idiot user deletes playlist
-        flask.flash("You are already owner of a session", category="error")
-        return flask.redirect(flask.url_for('.queue'))
+        flash("You are already owner of a session", category="error")
+        return redirect(url_for('.index'))
     try:
         currentUser.currently_playing()['item']
     except KeyError:
-        flask.flash("Playback device not found.. Please open your Spotify app and begin playing (any random song)",
+        flash("Playback device not found.. Please open your Spotify app and begin playing (any random song)",
                     category='error')
-        return flask.redirect(flask.url_for('.index'))
-    playlists = currentUser.get_playlists()  # todo empty playlists are not included
+        return redirect(url_for('.index'))
+    playlists: List[spotify.Playlist] = currentUser.get_playlists()  # todo empty playlists are not included
     playlist: spotify.Playlist = None
     for p in playlists:
         if p.name == 'Spo2fi Queue':
@@ -75,51 +109,51 @@ def start():
     listeningSessions[currentUser.id] = ListeningSession(currentUser, [], playlist, joinId)
     partyIdMap[joinId] = currentUser.id
 
-    flask.session['party'] = listeningSessions[currentUser.id].joinId
-    print('user ', currentUser.display_name, ' joined ' , flask.session['party'])
+    session['party'] = listeningSessions[currentUser.id].joinId
+    print('user ', currentUser.display_name, ' joined ' , session['party'])
 
     try:
         currentUser.get_player().play(playlist)
         currentUser.get_player().shuffle(False)
     except spotify.errors.NotFound:
-        flask.flash("Playback device not found.. Please open your Spotify app and begin playing (any random song)",
+        flash("Playback device not found.. Please open your Spotify app and begin playing (any random song)",
                     category='error')
-        return flask.redirect(flask.url_for('.index'))  # todo handle error
-    return flask.redirect(flask.url_for('.queue'))
+        return redirect(url_for('.index'))
+    return redirect(url_for('.index'))
 
 
 @APP.route('/join')
 def join():
-    currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+    currentUser = SPOTIFY_USERS[session['spotify_user_id']]
     try:
-        joinId = str.upper(flask.request.args['joinId'])
+        joinId = str.upper(request.args['joinId'])
         ownerId = partyIdMap[joinId]
         party = listeningSessions[ownerId]
     except KeyError:
-        flask.flash('Code not found', category='error')
-        return flask.redirect('/')
+        flash('Code not found', category='error')
+        return redirect('/')
     else:
         if currentUser not in party.members:
             party.members.append(currentUser)
-        flask.session['party'] = party.joinId
-        return flask.redirect(flask.url_for('.queue'))
+        session['party'] = party.joinId
+        return redirect(url_for('.index'))
 
 
 @APP.route('/search')
 def search():
     try:
-        query = flask.request.args["query"]
+        query = request.args["query"]
     except KeyError:
         return "no query entered"
     else:
         if not query:
-            flask.flash('Empty search query', category='error')
-            return flask.redirect(flask.url_for('.queue'))
-        currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+            flash('Empty search query', category='error')
+            return redirect(url_for('.index'))
+        currentUser = SPOTIFY_USERS[session['spotify_user_id']]
         results = SPOTIFY_CLIENT.search(query, limit=10)
-        ownerId = partyIdMap[flask.session['party']]
+        ownerId = partyIdMap[session['party']]
         party = listeningSessions[ownerId]
-        return flask.render_template("search.html",
+        return render_template("search.html",
                                      user=currentUser,
                                      owner=party.owner,
                                      artists=results[0],
@@ -133,111 +167,161 @@ def search():
 @APP.route('/add')
 def addToQueue():
     try:
-        ownerId = partyIdMap[flask.session['party']]
+        ownerId = partyIdMap[session['party']]
         party = listeningSessions[ownerId]
-        print('track added to ', flask.session['party'])
+        print('track added to ', session['party'])
     except KeyError:
         return "no session currently found"
     else:
-        currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
-        track = SPOTIFY_CLIENT.get_track(flask.request.args['trackId'])
+        currentUser = SPOTIFY_USERS[session['spotify_user_id']]
+        track = SPOTIFY_CLIENT.get_track(request.args['trackId'])
 
         # party.owner.add_tracks(party.playlist, track)  # only owner can add tracks to playlist
         party.playlist.extend([track])
 
-        return flask.redirect(flask.url_for('.queue'))
+        return redirect(url_for('.index'))
 
 
 @APP.route('/remove')
 def removeTrack():
     try:
-        ownerId = partyIdMap[flask.session['party']]
+        ownerId = partyIdMap[session['party']]
         party = listeningSessions[ownerId]
-        print('track removed from ', flask.session['party'])
+        print('track removed from ', session['party'])
     except KeyError:
         return "no session currently found"
     else:
-        currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
-        track = SPOTIFY_CLIENT.get_track(flask.request.args['track'])
-        party.playlist.remove_tracks((track, [int(flask.request.args['trackIndex'])]))
+        currentUser = SPOTIFY_USERS[session['spotify_user_id']]
+        track = SPOTIFY_CLIENT.get_track(request.args['track'])
+        party.playlist.remove_tracks((track, [int(request.args['trackIndex'])]))
 
-        return flask.redirect(flask.url_for('.queue'))
-
-
-@APP.route('/queue')
-def queue():
-    ownerId = partyIdMap[flask.session['party']]
-    party = listeningSessions[ownerId]
-    currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
-    playlist = party.playlist
-    playlists = currentUser.get_all_playlists()
-    return flask.render_template("queue.html",
-                                 user=currentUser,
-                                 owner=party.owner,
-                                 tracks=playlist.get_tracks(),
-                                 joinId=party.joinId,
-                                 isOwner=currentUser == party.owner,
-                                 playlists=playlists,
-                                 members=party.members)
+        return redirect(url_for('.index'))
 
 
 @APP.route('/playTrack')
 def playTrack():
     try:
-        ownerId = partyIdMap[flask.session['party']]
+        ownerId = partyIdMap[session['party']]
         party = listeningSessions[ownerId]
     except KeyError:
         return "no session currently found"
     else:
-        currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+        currentUser = SPOTIFY_USERS[session['spotify_user_id']]
         try:
             currentUser.currently_playing()['item']
         except KeyError:
-            flask.flash("Playback device not found.. Please open your Spotify app and begin playing",
+            flash("Playback device not found.. Please open your Spotify app and begin playing",
                         category='error')
-            return flask.redirect(flask.url_for('.queue'))
+            return redirect(url_for('.index'))
 
-        track = flask.request.args['track']
+        track = request.args['track']
         party.owner.get_player().play(party.playlist.uri, offset=track)
-        return flask.redirect(flask.url_for('.queue'))
+        return redirect(url_for('.index'))
 
 
-@APP.route('/next')
-def nextTrack():
+@APP.route('/resume')
+def resumeTrack():
     try:
-        ownerId = partyIdMap[flask.session['party']]
+        ownerId = partyIdMap[session['party']]
         party = listeningSessions[ownerId]
     except KeyError:
-        return "no session currently found"
+        return jsonify({'error': 'no session'})
     else:
-        currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+        currentUser = SPOTIFY_USERS[session['spotify_user_id']]
         try:
             currentUser.currently_playing()['item']
         except KeyError:
-            flask.flash("Playback device not found.. Please open your Spotify app and begin playing",
-                        category='error')
-            return flask.redirect(flask.url_for('.queue'))
-        party.owner.get_player().next()
-        return flask.redirect(flask.url_for('.queue'))
+            return jsonify({'error': 'Playback device not found.. Please open your Spotify app and begin playing'})
+        finally:
+            try:
+                party.owner.get_player().resume()
+            except Exception as e:
+                return jsonify({'error': str(e)}), 403
+        return jsonify({'success': 's'})
+
+
+@APP.route('/pause')
+def pauseTrack():
+    try:
+        ownerId = partyIdMap[session['party']]
+        party = listeningSessions[ownerId]
+    except KeyError:
+        return jsonify({'error': 'no session'})
+    else:
+        currentUser = SPOTIFY_USERS[session['spotify_user_id']]
+        try:
+            currentUser.currently_playing()['item']
+        except KeyError:
+            return jsonify({'error': 'Playback device not found.. Please open your Spotify app and begin playing'})
+        finally:
+            try:
+                party.owner.get_player().pause()
+            except Exception as e:
+                return jsonify({'error': str(e)}), 403
+        return jsonify({'success': 's'})
 
 
 @APP.route('/prev')
 def previousTrack():
     try:
-        ownerId = partyIdMap[flask.session['party']]
+        ownerId = partyIdMap[session['party']]
         party = listeningSessions[ownerId]
     except KeyError:
-        return "no session currently found"
+        return jsonify({'error': 'no session'})
     else:
-        currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+        currentUser = SPOTIFY_USERS[session['spotify_user_id']]
         try:
             currentUser.currently_playing()['item']
         except KeyError:
-            flask.flash("Playback device not found.. Please open your Spotify app and begin playing",
-                        category='error')
-            return flask.redirect(flask.url_for('.queue'))
-        party.owner.get_player().previous()
-        return flask.redirect(flask.url_for('.queue'))
+            return jsonify({'error': 'Playback device not found.. Please open your Spotify app and begin playing'})
+        finally:
+            try:
+                party.owner.get_player().previous()
+            except Exception as e:
+                return jsonify({'error': str(e)}), 403
+        return jsonify({'success': 's'})
+
+
+@APP.route('/restart')
+def restartTrack():
+    try:
+        ownerId = partyIdMap[session['party']]
+        party = listeningSessions[ownerId]
+    except KeyError:
+        return jsonify({'error': 'no session'})
+    else:
+        currentUser = SPOTIFY_USERS[session['spotify_user_id']]
+        try:
+            currentUser.currently_playing()['item']
+        except KeyError:
+            return jsonify({'error': 'Playback device not found.. Please open your Spotify app and begin playing'})
+        finally:
+            try:
+                party.owner.get_player().seek(0)
+            except Exception as e:
+                return jsonify({'error': str(e)}), 403
+        return jsonify({'success': 's'})
+
+
+@APP.route('/next')
+def nextTrack():
+    try:
+        ownerId = partyIdMap[session['party']]
+        party = listeningSessions[ownerId]
+    except KeyError:
+        return jsonify({'error': 'no session'})
+    else:
+        currentUser = SPOTIFY_USERS[session['spotify_user_id']]
+        try:
+            currentUser.currently_playing()['item']
+        except KeyError:
+            return jsonify({'error': 'Playback device not found.. Please open your Spotify app and begin playing'})
+        else:
+            try:
+                party.owner.get_player().next()
+            except Exception as e:
+                return jsonify({'error': str(e)}), 403
+        return jsonify({'success': 's'})
 
 
 # def checkEnd(party: ListeningSession):
@@ -247,24 +331,70 @@ def previousTrack():
 
 @APP.route('/<user>/playlists/<page>')
 def browsePlaylists(user, page):
-    currentUser = SPOTIFY_USERS[flask.session['spotify_user_id']]
+    currentUser = SPOTIFY_USERS[session['spotify_user_id']]
+    ownerId = partyIdMap[session['party']]
+    party = listeningSessions[ownerId]
+
     if currentUser.id == user:
         playlists = currentUser.get_playlists(offset=page*20)
 
-        return flask.render_template('browse/browse.html',
-                                     results=playlists)
+        return render_template('browse/browse.html',
+                                     results=playlists,
+                                     user=currentUser,
+                                     owner=party.owner,
+                                     offset=page*20,
+                                     endpoint='/%s/playlists/' % user,
+                                     page=page)
     else:
-        try:
-            ownerId = partyIdMap[flask.session['party']]
-            party = listeningSessions[ownerId]
-            playlistOwner = party.members[user]
-        except KeyError:
-            flask.flash('User not found', category='error')
-            return 'todo'
-        finally:
-            playlists = playlistOwner.get_playlists(offset=page*20)
-            return flask.render_template('browse/browse.html',
-                                         results=playlists)
+        playlistOwner = party.members[user]
+        playlists = playlistOwner.get_playlists(offset=page*20)
+        return render_template('browse/browse.html',
+                                     results=playlists,
+                                     user=playlistOwner,
+                                     owner=party.owner,
+                                     offset=page*20,
+                                     endpoint='/%s/playlists/' % user,
+                                     page=page)
+
+
+@APP.route('/<user>/<offset>/<playlist_id>/<page>')
+def browsePlaylistTracks(user, offset, playlist_id, page):
+    currentUser = SPOTIFY_USERS[session['spotify_user_id']]
+    ownerId = partyIdMap[session['party']]
+    party = listeningSessions[ownerId]
+
+    if currentUser.id == user:
+        playlists = currentUser.get_playlists(offset=offset)
+        print(repr(playlists))
+        playlist = None
+        for p in playlists:
+            if p.id == playlist_id:
+                playlist = p
+                break
+        tracks = playlist.get_tracks(offset=page*100, limit=100)
+
+        return render_template('browse/tracks.html',
+                                     playlist=playlist,
+                                     owner=party.owner,
+                                     tracks=tracks,
+                                     endpoint='/%s/%s/%s/' % (user, offset, playlist_id),
+                                     page=page)
+    else:
+        playlistOwner = party.members[user]
+        playlists = playlistOwner.get_playlists(offset=offset)
+        playlist = None
+        for p in playlists:
+            if p.id == playlist_id:
+                playlist = p
+                break
+        tracks = playlist.get_tracks(offset=page*100, limit=100)
+
+        return render_template('browse/browse.html',
+                                     playlist=playlist,
+                                     owner=party.owner,
+                                     tracks=tracks,
+                                     endpoint='/%s/%s/%s/' % (user, offset, playlist_id),
+                                     page=page)
 
 
 if __name__ == '__main__':
