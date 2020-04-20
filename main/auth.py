@@ -1,12 +1,13 @@
-from flask import Blueprint, render_template
-import flask
-import spotify.sync as spotify
-from models import ListeningSession
 import os
-import string
 import random
+import string
 from typing import Dict
 
+import flask
+import spotify.sync as spotify
+from flask import Blueprint
+
+from models import ListeningSession
 
 bp = Blueprint('auth', __name__)
 
