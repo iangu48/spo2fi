@@ -3,35 +3,41 @@
 {% block content %}
     <br>
     <h5>Tracks: </h5>
-    <div class="row">
-        <div class="col-6 d-flex">
-            {% if page > 0 %}
-                <a href="/{{ playlistOwner }}/{{ offset }}/{{ playlist.id }}/{{ page - 1 }}" class="mr-1">Prev</a>
-                <span>{{ page }}</span>
-            {% endif %}
-            <span><b>{{ page + 1 }}</b></span>
-            {% if tracks|length == 100 %}
-                <span>{{ page + 2 }}</span>
-                <a href="/{{ playlistOwner }}/{{ offset }}/{{ playlist.id }}/{{ page + 1 }}" class="ml-1">Next</a>
-            {% endif %}
-        </div>
+    <div class="d-flex mb-2">
+        {% if page > 0 %}
+            <a href="/{{ playlistOwner }}/{{ offset }}/{{ playlist.id }}/{{ page - 1 }}"
+               class="mr-auto btn-sm btn-primary">
+                <i class="fa fa-long-arrow-alt-left"></i>
+            </a>
+        {% else %}
+            <a class="mr-auto"></a>
+        {% endif %}
+        <span class="font-weight-light">{{ page + 1 }}</span>
+        {% if tracks|length == 100 %}
+            <a href="/{{ playlistOwner }}/{{ offset }}/{{ playlist.id }}/{{ page + 1 }}"
+               class="ml-auto btn-sm btn-primary">
+                <i class="fa fa-long-arrow-alt-right"></i>
+            </a>
+        {% else %}
+            <a class="ml-auto"></a>
+        {% endif %}
     </div>
     <ul class="list-group">
         {% for track in tracks %}
             <li class="list-group-item bg-light">
                 <form method="get" action="/add">
                     <input name="trackId" id="trackId" value="{{ track.id }}" type="hidden">
-                    <div class="row d-flex align-items-center justify-content-between">
-                        <div class="col-3 d-inline-block">
+                    <div class="d-flex p-0 align-content-center">
+                        <div class="col-3 d-inline-block align-self-center p-0">
                             <img src="{{ track.album.images[0].url }}" alt="img" width="50" height="50">
                         </div>
-                        <div class="col-6 align-self-center flex-grow-1 d-inline-block">
-                            <span class="text-center">{{ track.name }} </span>
+                        <div class="col-6 align-self-center flex-grow-1 d-inline-block text-truncate">
+                            <span>{{ track.name }} </span>
                             <div class="w-100"></div>
                             <span class="text-muted font-weight-light">{{ track.artists[0].name }}</span>
                         </div>
                         <div class="col-3 align-self-center">
-                            <button type="submit" class="btn btn-primary d-inline-block"><span
+                            <button type="submit" class="btn btn-outline-primary d-inline-block border-0"><span
                                     class="fa fa-plus"></span></button>
                         </div>
                     </div>
@@ -39,18 +45,24 @@
             </li>
         {% endfor %}
     </ul>
-    <div class="row">
-        <div class="col-3 d-flex">
-            {% if page > 0 %}
-                <a href="/{{ playlistOwner }}/{{ offset }}/{{ playlist.id }}/{{ page - 1 }}" class="mr-1">Prev</a>
-                <span>{{ page }}</span>
-            {% endif %}
-            <span><b>{{ page + 1 }}</b></span>
-            {% if tracks|length == 100 %}
-                <span>{{ page + 2 }}</span>
-                <a href="/{{ playlistOwner }}/{{ offset }}/{{ playlist.id }}/{{ page + 1 }}" class="ml-1">Next</a>
-            {% endif %}
-        </div>
+    <div class="d-flex mt-2">
+        {% if page > 0 %}
+            <a href="/{{ playlistOwner }}/{{ offset }}/{{ playlist.id }}/{{ page - 1 }}"
+               class="mr-auto btn-sm btn-primary">
+                <i class="fa fa-long-arrow-alt-left"></i>
+            </a>
+        {% else %}
+            <a class="mr-auto"></a>
+        {% endif %}
+        <span class="font-weight-light">{{ page + 1 }}</span>
+        {% if tracks|length == 100 %}
+            <a href="/{{ playlistOwner }}/{{ offset }}/{{ playlist.id }}/{{ page + 1 }}"
+               class="ml-auto btn-sm btn-primary">
+                <i class="fa fa-long-arrow-alt-right"></i>
+            </a>
+        {% else %}
+            <a class="ml-auto"></a>
+        {% endif %}
     </div>
     <br>
 

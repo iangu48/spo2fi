@@ -3,25 +3,29 @@
 {% block content %}
     <br>
     <h5>Playlists: </h5>
-    <div class="row">
-        <div class="col-6 d-flex">
-            {% if page > 0 %}
-                <a href="/{{ playlistOwner }}/playlists/{{ page - 1 }}" class="mr-1">Prev</a>
-                <span>{{ page }}</span>
-            {% endif %}
-            <span><b>{{ page + 1 }}</b></span>
-            {% if results|length == 20 %}
-                <span>{{ page + 2 }}</span>
-                <a href="/{{ playlistOwner }}/playlists/{{ page + 1 }}" class="ml-1">Next</a>
-            {% endif %}
-        </div>
+    <div class="d-flex mb-2">
+        {% if page > 0 %}
+            <a href="/{{ playlistOwner }}/playlists/{{ page - 1 }}" class="mr-auto btn-sm btn-primary">
+                <i class="fa fa-long-arrow-alt-left"></i>
+            </a>
+        {% else %}
+            <a class="mr-auto"></a>
+        {% endif %}
+        <span class="font-weight-light">{{ page + 1 }}</span>
+        {% if results|length == 20 %}
+            <a href="/{{ playlistOwner }}/playlists/{{ page + 1 }}" class="ml-auto btn-sm btn-primary">
+                <i class="fa fa-long-arrow-alt-right"></i>
+            </a>
+        {% else %}
+            <a class="ml-auto"></a>
+        {% endif %}
     </div>
     <ul class="list-group">
         {% for playlist in results %}
             <li class="list-group-item bg-light">
                 <a href="/{{ playlistOwner }}/{{ offset }}/{{ playlist.id }}/0">
-                    <div class="d-flex justify-content-between bg-light align-items-center">
-                        <div class="col-auto d-inline-block">
+                    <div class="d-flex p-0 align-content-center">
+                        <div class="col-4 d-inline-block p-0">
                             {% if playlist.images|length %}
                                 <img src="{{ playlist.images[0].url }}" width="90" height="90"
                                      style="background-color: grey" alt="missing img">
@@ -29,7 +33,7 @@
                                 <div style="width: 90px; height: 90px; background-color: grey;"></div>
                             {% endif %}
                         </div>
-                        <div class="col-auto align-self-center flex-grow-1 d-inline-block">
+                        <div class="col-8 align-self-center flex-grow-1 d-inline-block text-truncate">
                             <span>{{ playlist.name }} </span>
                         </div>
                     </div>
@@ -37,18 +41,22 @@
             </li>
         {% endfor %}
     </ul>
-    <div class="row">
-        <div class="col-3 d-flex justify-content-between">
-            {% if page > 0 %}
-                <a href="/{{ playlistOwner }}/playlists/{{ page - 1 }}">Prev</a>
-                <span>{{ page }}</span>
-            {% endif %}
-            <span><b>{{ page + 1 }}</b></span>
-            {% if results|length == 20 %}
-                <span>{{ page + 2 }}</span>
-                <a href="/{{ playlistOwner }}/playlists/{{ page + 1 }}">Next</a>
-            {% endif %}
-        </div>
+    <div class="d-flex mt-2">
+        {% if page > 0 %}
+            <a href="/{{ playlistOwner }}/playlists/{{ page - 1 }}" class="mr-auto btn-sm btn-primary">
+                <i class="fa fa-long-arrow-alt-left"></i>
+            </a>
+        {% else %}
+            <a class="mr-auto"></a>
+        {% endif %}
+        <span class="font-weight-light">{{ page + 1 }}</span>
+        {% if results|length == 20 %}
+            <a href="/{{ playlistOwner }}/playlists/{{ page + 1 }}" class="ml-auto btn-sm btn-primary">
+                <i class="fa fa-long-arrow-alt-right"></i>
+            </a>
+        {% else %}
+            <a class="ml-auto"></a>
+        {% endif %}
     </div>
     <br>
 

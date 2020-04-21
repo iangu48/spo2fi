@@ -2,18 +2,19 @@
 {% block title %} Spo2fi - Queue with friends {% endblock %}
 {% block content %}
     <div class="row">
-        <div class="col-12">
+        <div class="col-6 mb-1" id="searchDiv">
             <form action="/search" method="get">
                 <div class="input-group">
                     <input type="text" class="form-control" id="query" name="query" placeholder="search"
-                           aria-label="Search" aria-describedby="search" autocomplete="off">
+                           aria-label="Search" aria-describedby="search" autocomplete="off" onfocus="toggleSearch()"
+                           onfocusout="toggleSearch()">
                     <div class="input-group-append">
                         <button type="submit" class="btn btn-success"><span class="fa fa-search"></span></button>
                     </div>
                 </div>
             </form>
         </div>
-        <div class="col-12">
+        <div class="col-6 mb-2" id="browsePlaylistsDiv">
             <div class="btn-group">
                 <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
                         aria-haspopup="true" aria-expanded="false">Browse Playlists
@@ -44,10 +45,10 @@
                                            alt="img" width="50" height="50">
                                 </form>
                             </div>
-                            <div class="col-8 align-self-center d-inline-block p-0">
-                                <div class="d-inline-block col-11 text-truncate p-0">{{ track.name }} </div>
+                            <div class="col-8 align-self-center d-inline-block text-truncate">
+                                <span>{{ track.name }} </span>
                                 <div class="w-100"></div>
-                                <div class="d-inline-block col-11 text-truncate text-muted font-weight-light p-0">{{ track.artists[0].name }}</div>
+                                <span class="text-muted font-weight-light">{{ track.artists[0].name }}</span>
                             </div>
                         </div>
 
@@ -56,5 +57,7 @@
             </ul>
         </div>
     </div>
+    <br>
+    <br>
 
 {% endblock %}

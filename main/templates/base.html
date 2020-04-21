@@ -73,13 +73,12 @@
                         </div>
 
                     </div>
-                    <div class="col-12 d-flex justify-content-between">
+                    <div class="col-12 d-flex justify-content-between mb-2">
                         <span id="songSecondsPassed" class="col-1 p-0 mr-1">0:00</span>
                         <span id="songTotalSeconds" class="col-1 p-0 ml-1 text-right"></span>
                     </div>
                 </div>
 
-                <br>
                 {% if isOwner %}
                     <div class="fixed-bottom">
                         <div class="row">
@@ -252,6 +251,12 @@
                     dataType: 'json'
                 });
             }
+        }
+
+        function toggleSearch() {
+            $('#searchDiv')
+                .toggleClass('col-6')
+                .toggleClass('col-12')
         }
 
     </script>
