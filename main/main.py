@@ -3,14 +3,15 @@ import random
 import string
 from typing import List
 
-# for heroku deployment, use
-# main.models
-# main.auth
 from flask import flash, redirect, url_for, Flask, render_template, session, request, jsonify
 import spotify.sync as spotify
+# for heroku deployment, use TODO before deployment
 import main.auth as auth
 from main.auth import SPOTIFY_CLIENT, SPOTIFY_USERS, listeningSessions, OAUTH2, partyIdMap
 from main.models import ListeningSession
+# import auth as auth
+# from auth import SPOTIFY_CLIENT, SPOTIFY_USERS, listeningSessions, OAUTH2, partyIdMap
+# from models import ListeningSession
 
 APP = Flask(__name__)
 APP.register_blueprint(auth.bp)
@@ -29,20 +30,20 @@ def index():
     try:
         currentUser = SPOTIFY_USERS[session['spotify_user_id']]
         currentSession = listeningSessions.get(currentUser.id)
-        
+
         if currentUser.id in listeningSessions:
             ownerId = partyIdMap[session['party']]
             party = listeningSessions[ownerId]
             playlist = party.playlist
             playlists = currentUser.get_all_playlists()
             return render_template("queue.html",
-                                         user=currentUser,
-                                         owner=party.owner,
-                                         tracks=playlist.get_tracks(),
-                                         joinId=party.joinId,
-                                         isOwner=currentUser == party.owner,
-                                         playlists=playlists,
-                                         members=party.members)
+                                   user=currentUser,
+                                   owner=party.owner,
+                                   tracks=playlist.get_tracks(),
+                                   joinId=party.joinId,
+                                   isOwner=currentUser == party.owner,
+                                   playlists=playlists,
+                                   members=party.members)
         else:
             try:
                 ownerId = partyIdMap[session['party']]
@@ -57,16 +58,16 @@ def index():
                                        isOwner=currentUser == party.owner,
                                        playlists=playlists,
                                        members=party.members)
-            except KeyError as e:
-                print(e)
+            except Exception as e:
+                print('error', str(e))
 
         print('current users: ', SPOTIFY_USERS)
         print('parties: ', listeningSessions.keys())
         return render_template("index.html",
-                                     user=currentUser,
-                                     openSession=currentSession,
-                                     owner=currentUser,
-                                     isOwner=False)
+                               user=currentUser,
+                               openSession=currentSession,
+                               owner=currentUser,
+                               isOwner=False)
     except KeyError:
         return redirect(OAUTH2.url)
 
@@ -82,7 +83,7 @@ def start():
         currentUser.currently_playing()['item']
     except KeyError:
         flash("Playback device not found.. Please open your Spotify app and begin playing (any random song)",
-                    category='error')
+              category='error')
         return redirect(url_for('.index'))
     playlists: List[spotify.Playlist] = currentUser.get_playlists()  # todo empty playlists are not included
     playlist: spotify.Playlist = None
@@ -112,14 +113,14 @@ def start():
     partyIdMap[joinId] = currentUser.id
 
     session['party'] = listeningSessions[currentUser.id].joinId
-    print('user ', currentUser.display_name, ' joined ' , session['party'])
+    print('user ', currentUser.display_name, ' joined ', session['party'])
 
     try:
         currentUser.get_player().play(playlist)
         currentUser.get_player().shuffle(False)
     except spotify.errors.NotFound:
         flash("Playback device not found.. Please open your Spotify app and begin playing (any random song)",
-                    category='error')
+              category='error')
         return redirect(url_for('.index'))
     return redirect(url_for('.index'))
 
@@ -156,14 +157,14 @@ def search():
         ownerId = partyIdMap[session['party']]
         party = listeningSessions[ownerId]
         return render_template("search.html",
-                                     user=currentUser,
-                                     owner=party.owner,
-                                     artists=results[0],
-                                     playlists=results[1],
-                                     albums=results[2],
-                                     tracks=results[3],
-                                     isOwner=currentUser == party.owner,
-                                     joinId=party.joinId)
+                               user=currentUser,
+                               owner=party.owner,
+                               artists=results[0],
+                               playlists=results[1],
+                               albums=results[2],
+                               tracks=results[3],
+                               isOwner=currentUser == party.owner,
+                               joinId=party.joinId)
 
 
 @APP.route('/add')
@@ -189,15 +190,18 @@ def removeTrack():
     try:
         ownerId = partyIdMap[session['party']]
         party = listeningSessions[ownerId]
-        print('track removed from ', session['party'])
-    except KeyError:
-        return "no session currently found"
+    except Exception as e:
+        return jsonify({'error': str(e)}), 403
     else:
         currentUser = SPOTIFY_USERS[session['spotify_user_id']]
-        track = SPOTIFY_CLIENT.get_track(request.args['track'])
-        party.playlist.remove_tracks((track, [int(request.args['trackIndex'])]))
+        print(request.args['track'], request.args['trackIndex'])
+        trackId = SPOTIFY_CLIENT.get_track(request.args['track'])
+        party.playlist.remove_tracks(trackId)
+        # party.playlist.remove_tracks((trackId, [int(request.args['trackIndex'])]))
+        # todo this doesn't work anymore for some reason
 
-        return redirect(url_for('.index'))
+        print('track removed from ', session['party'])
+        return jsonify({'success': 's'}), 200
 
 
 @APP.route('/playTrack')
@@ -213,7 +217,7 @@ def playTrack():
             currentUser.currently_playing()['item']
         except KeyError:
             flash("Playback device not found.. Please open your Spotify app and begin playing",
-                        category='error')
+                  category='error')
             return redirect(url_for('.index'))
 
         track = request.args['track']
@@ -336,27 +340,42 @@ def browsePlaylists(user, page):
     currentUser = SPOTIFY_USERS[session['spotify_user_id']]
     ownerId = partyIdMap[session['party']]
     party = listeningSessions[ownerId]
-
+    print(page)
+    page = int(page)
     if currentUser.id == user:
         playlists = currentUser.get_playlists(offset=page*20)
 
         return render_template('browse/browse.html',
-                                     results=playlists,
-                                     user=currentUser,
-                                     owner=party.owner,
-                                     offset=page*20,
-                                     endpoint='/%s/playlists/' % user,
-                                     page=page)
+                               playlistOwner=user,
+                               results=playlists,
+                               user=currentUser,
+                               owner=party.owner,
+                               offset=page*20,
+                               endpoint='/%s/playlists/%s' % (user, page),
+                               page=page)
+    elif user == party.owner.id:
+        playlists = party.owner.get_playlists(offset=page*20)
+
+        return render_template('browse/browse.html',
+                               playlistOwner=user,
+                               results=playlists,
+                               user=currentUser,
+                               owner=party.owner,
+                               offset=page * 20,
+                               endpoint='/%s/playlists/%s' % (user, page),
+                               page=page)
     else:
-        playlistOwner = party.members[user]
+        print(user, party.members[0].uri, party.members[0])
+        playlistOwner = [x for x in party.members if x.id == user][0]
         playlists = playlistOwner.get_playlists(offset=page*20)
         return render_template('browse/browse.html',
-                                     results=playlists,
-                                     user=playlistOwner,
-                                     owner=party.owner,
-                                     offset=page*20,
-                                     endpoint='/%s/playlists/' % user,
-                                     page=page)
+                               playlistOwner=user,
+                               results=playlists,
+                               user=playlistOwner,
+                               owner=party.owner,
+                               offset=page*20,
+                               endpoint='/%s/playlists/%s' % (user, page),
+                               page=page)
 
 
 @APP.route('/<user>/<offset>/<playlist_id>/<page>')
@@ -364,6 +383,8 @@ def browsePlaylistTracks(user, offset, playlist_id, page):
     currentUser = SPOTIFY_USERS[session['spotify_user_id']]
     ownerId = partyIdMap[session['party']]
     party = listeningSessions[ownerId]
+    offset = int(offset)
+    page = int(page)
 
     if currentUser.id == user:
         playlists = currentUser.get_playlists(offset=offset)
@@ -373,30 +394,51 @@ def browsePlaylistTracks(user, offset, playlist_id, page):
             if p.id == playlist_id:
                 playlist = p
                 break
-        tracks = playlist.get_tracks(offset=page*100, limit=100)
+        tracks = playlist.get_tracks(offset=page * 100, limit=100)
 
         return render_template('browse/tracks.html',
-                                     playlist=playlist,
-                                     owner=party.owner,
-                                     tracks=tracks,
-                                     endpoint='/%s/%s/%s/' % (user, offset, playlist_id),
-                                     page=page)
+                               playlistOwner=user,
+                               offset=offset,
+                               playlist=playlist,
+                               owner=party.owner,
+                               tracks=tracks,
+                               endpoint='/%s/%s/%s/' % (user, offset, playlist_id),
+                               page=page)
+    elif user == party.owner.id:
+        playlists = party.owner.get_playlists(offset=offset)
+        playlist = None
+        for p in playlists:
+            if p.id == playlist_id:
+                playlist = p
+                break
+        tracks = playlist.get_tracks(offset=page * 100, limit=100)
+
+        return render_template('browse/tracks.html',
+                               playlistOwner=user,
+                               offset=offset,
+                               playlist=playlist,
+                               owner=party.owner,
+                               tracks=tracks,
+                               endpoint='/%s/%s/%s/' % (user, offset, playlist_id),
+                               page=page)
     else:
-        playlistOwner = party.members[user]
+        playlistOwner = [x for x in party.members if x.id == user][0]
         playlists = playlistOwner.get_playlists(offset=offset)
         playlist = None
         for p in playlists:
             if p.id == playlist_id:
                 playlist = p
                 break
-        tracks = playlist.get_tracks(offset=page*100, limit=100)
+        tracks = playlist.get_tracks(offset=page * 100, limit=100)
 
-        return render_template('browse/browse.html',
-                                     playlist=playlist,
-                                     owner=party.owner,
-                                     tracks=tracks,
-                                     endpoint='/%s/%s/%s/' % (user, offset, playlist_id),
-                                     page=page)
+        return render_template('browse/tracks.html',
+                               playlistOwner=user,
+                               offset=offset,
+                               playlist=playlist,
+                               owner=party.owner,
+                               tracks=tracks,
+                               endpoint='/%s/%s/%s/' % (user, offset, playlist_id),
+                               page=page)
 
 
 if __name__ == '__main__':

@@ -40,7 +40,7 @@
             {% if owner.currently_playing().is_playing == True %}
                 {% set currentTrack = owner.currently_playing().item %}
                 <div class="row mb-3 flex-nowrap">
-                    <div class="col-4 d-inline-block align-self-center">
+                    <div class="col-auto d-inline-block align-self-center">
                         <img src="{{ currentTrack.album.images[0].url }}" alt="img" width="90" height="90">
                     </div>
                     <div class="col-8 align-self-center p-0 d-inline-block">
@@ -75,7 +75,7 @@
                     </div>
                     <div class="col-12 d-flex justify-content-between">
                         <span id="songSecondsPassed" class="col-1 p-0 mr-1">0:00</span>
-                        <span id="songTotalSeconds" class="col-1 p-0 ml-1"></span>
+                        <span id="songTotalSeconds" class="col-1 p-0 ml-1 text-right"></span>
                     </div>
                 </div>
 
@@ -237,9 +237,20 @@
         }
 
         function remove(del) {
-            let r = confirm("Remove from queue?")
+            let r = confirm("Remove from queue?");
             if (r) {
-                {#todo remove track ajax#}
+                $.ajax({
+                    type: "get",
+                    url: '/remove',
+                    data: {
+                        'track': $(del).find('#track').data('track'),
+                        'trackIndex': $(del).find('#trackIndex').data('index')
+                    },
+                    success: function (res) {
+                        location.reload()
+                    },
+                    dataType: 'json'
+                });
             }
         }
 

@@ -12,9 +12,11 @@
                     </div>
                 </div>
             </form>
+        </div>
+        <div class="col-12">
             <div class="btn-group">
                 <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
-                        aria-haspopup="true" aria-expanded="false">View Playlists
+                        aria-haspopup="true" aria-expanded="false">Browse Playlists
                 </button>
                 <div class="dropdown-menu">
                     <a class="dropdown-item" href="/{{ owner.id }}/playlists/0">{{ owner.display_name }}</a>
@@ -25,20 +27,19 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <br>
-    <div class="row">
         <div class="col-12">
             <h5>Tracks: </h5>
             <ul class="list-group">
                 {% for track in tracks | reverse %}
                     {% set size = loop.length %}
                     <li class="list-group-item d-flex align-items-center justify-content-between" oncontextmenu="remove(this)">
+                        <div id="track" data-track="{{ track }}"></div>
+                        <div id="trackIndex" data-index="{{ size - loop.index }}"></div>
+
                         <div class="col-12 p-0 align-content-center">
                             <div class="col-auto d-inline-block align-self-center p-0">
                                 <form action="/playTrack" method="get">
-                                    <input type="hidden" name="track" id="track" value="{{ track }}">
+                                    <input type="hidden" name="track" id="track{{ loop.index }}" value="{{ track }}">
                                     <input type="image" name="submit" src="{{ track.album.images[0].url }}"
                                            alt="img" width="50" height="50">
                                 </form>
@@ -48,20 +49,6 @@
                                 <div class="w-100"></div>
                                 <div class="d-inline-block col-11 text-truncate text-muted font-weight-light p-0">{{ track.artists[0].name }}</div>
                             </div>
-{#                            {% if isOwner %}#}
-{#                                <div class="col-auto align-self-center d-inline-block p-0 align-content-center">#}
-{#                                    <form action="/remove" method="get">#}
-{#                                        <input type="hidden" name="track" id="track" value="{{ track }}">#}
-{#                                        <input type="hidden" name="trackIndex" id="trackIndex"#}
-{#                                               value="{{ size - loop.index }}">#}
-{#                                        <button type="submit" class="btn btn-danger"><span#}
-{#                                                class="fa fa-trash"></span>#}
-{#                                        </button>#}
-{#                                    </form>#}
-{#                                </div>#}
-{#                            {% else %}#}
-{#                                <span> </span>#}
-{#                            {% endif %}#}
                         </div>
 
                     </li>

@@ -3,13 +3,31 @@
 {% block content %}
     <br>
     <h5>Playlists: </h5>
+    <div class="row">
+        <div class="col-6 d-flex">
+            {% if page > 0 %}
+                <a href="/{{ playlistOwner }}/playlists/{{ page - 1 }}" class="mr-1">Prev</a>
+                <span>{{ page }}</span>
+            {% endif %}
+            <span><b>{{ page + 1 }}</b></span>
+            {% if results|length == 20 %}
+                <span>{{ page + 2 }}</span>
+                <a href="/{{ playlistOwner }}/playlists/{{ page + 1 }}" class="ml-1">Next</a>
+            {% endif %}
+        </div>
+    </div>
     <ul class="list-group">
         {% for playlist in results %}
             <li class="list-group-item bg-light">
-                <a href="/{{ user.id }}/{{ offset }}/{{ playlist.id }}/0">
+                <a href="/{{ playlistOwner }}/{{ offset }}/{{ playlist.id }}/0">
                     <div class="d-flex justify-content-between bg-light align-items-center">
                         <div class="col-auto d-inline-block">
-                            <img src="{{ playlist.images[0].url}}" alt="img" width="90" height="90">
+                            {% if playlist.images|length %}
+                                <img src="{{ playlist.images[0].url }}" width="90" height="90"
+                                     style="background-color: grey" alt="missing img">
+                            {% else %}
+                                <div style="width: 90px; height: 90px; background-color: grey;"></div>
+                            {% endif %}
                         </div>
                         <div class="col-auto align-self-center flex-grow-1 d-inline-block">
                             <span>{{ playlist.name }} </span>
@@ -19,6 +37,20 @@
             </li>
         {% endfor %}
     </ul>
+    <div class="row">
+        <div class="col-3 d-flex justify-content-between">
+            {% if page > 0 %}
+                <a href="/{{ playlistOwner }}/playlists/{{ page - 1 }}">Prev</a>
+                <span>{{ page }}</span>
+            {% endif %}
+            <span><b>{{ page + 1 }}</b></span>
+            {% if results|length == 20 %}
+                <span>{{ page + 2 }}</span>
+                <a href="/{{ playlistOwner }}/playlists/{{ page + 1 }}">Next</a>
+            {% endif %}
+        </div>
+    </div>
+    <br>
 
 
 {% endblock %}
