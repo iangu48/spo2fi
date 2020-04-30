@@ -1,4 +1,7 @@
 # Spo2fi - queue with friends
+
+![img](spo2fi-1.png)
+
 ### SETUP:
 ##### Environment variables to set before running:
 - `SPOTIFY_CLIENT_ID`
