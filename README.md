@@ -5,6 +5,8 @@ What does it do? Spo2fi allows people to queue songs to one device. Good for han
 
 ![img](spo2fi-1.png)
 
+---
+
 ### SETUP:
 ##### Environment variables to set before running:
 - `SPOTIFY_CLIENT_ID`
